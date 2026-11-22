@@ -1005,12 +1005,13 @@ interface RowProps {
 }
 
 // কাস্টমার অনুযায়ী কার্ডের সবুজ শেড — একই কাস্টমারের সব সেল একই রঙে; ফোন না থাকলে নাম বা আইডি
+// প্রতিটি শেড একটু আলাদা ও উজ্জ্বল — সবুজ, আকুয়া, লাইম, এবং লোগোর কমলা ঘেঁষা এপ্রিকট
 const CUSTOMER_TINTS = [
-  { bg: '#E3F2EA', bar: '#14513B' },
-  { bg: '#DDF0EC', bar: '#0F766E' },
-  { bg: '#E9F4DC', bar: '#5B8E2E' },
-  { bg: '#D9EEE5', bar: '#0B4F4A' },
-  { bg: '#E6EFE8', bar: '#2F4F3E' },
+  { bg: '#CFEBDD', bar: '#14513B' },
+  { bg: '#FDE6CF', bar: '#E0601A' },
+  { bg: '#CBEBE6', bar: '#0F766E' },
+  { bg: '#E2F0C6', bar: '#4D7C0F' },
+  { bg: '#D5E3D9', bar: '#2F4F3E' },
 ];
 function customerTint(s: Sale) {
   const key = s.customerPhone ? digitsOnly(s.customerPhone) : (s.customerRef || s.id);
@@ -1056,7 +1057,7 @@ function SaleRowDesktop(p: RowProps) {
   const tint = customerTint(s);
   return (
     <tr className="align-top" style={{ background: tint.bg }}>
-      <td className="px-4 py-3" style={{ borderLeft: `4px solid ${tint.bar}` }}>
+      <td className="px-4 py-3" style={{ borderLeft: `6px solid ${tint.bar}` }}>
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
         <div className="text-[11px] tabular-nums text-slate-400">{s.date}</div>
         {s.customerChannel && <div className="mt-1"><Badge tone={s.customerChannel === 'TikTok' ? 'violet' : s.customerChannel === 'Facebook' ? 'blue' : 'slate'}>{s.customerChannel}</Badge></div>}
@@ -1101,7 +1102,7 @@ function SaleCard(p: RowProps) {
   const isCourier = s.saleType === 'Courier Sale';
   const tint = customerTint(s);
   return (
-    <li className="px-4 py-3.5" style={{ background: tint.bg, borderLeft: `4px solid ${tint.bar}` }}>
+    <li className="px-4 py-3.5" style={{ background: tint.bg, borderLeft: `6px solid ${tint.bar}` }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
