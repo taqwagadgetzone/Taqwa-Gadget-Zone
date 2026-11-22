@@ -45,7 +45,7 @@ const cleanObj = <T extends Record<string, unknown>>(o: T) =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
 const isPhone = (p: string) => /^01\d{9}$/.test(p.replace(/\s|-/g, ''));
 
-type Line = { id: string; model: string; color: string; qty: string; purchase: string; selling: string };
+type Line = { id: string; category: string; model: string; color: string; qty: string; purchase: string; selling: string };
 
 type SaleForm = {
   date: string;
@@ -68,7 +68,10 @@ type SaleForm = {
   status: string;
 };
 
-const newLine = (): Line => ({ id: crypto.randomUUID(), model: '', color: '', qty: '1', purchase: '', selling: '' });
+const newLine = (): Line => ({ id: crypto.randomUUID(), category: '', model: '', color: '', qty: '1', purchase: '', selling: '' });
+
+// ফোন নম্বর থেকে সবচেয়ে নতুন আগের কাস্টমার খোঁজার জন্য — শুধু ডিজিট মিলিয়ে
+const digitsOnly = (p: string) => p.replace(/\D/g, '');
 
 const emptyForm = (invoice: string): SaleForm => ({
   date: todayStr(),
@@ -133,6 +136,7 @@ export default function Sales() {
   const [form, setForm] = useState<SaleForm>(emptyForm(''));
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [autoFilled, setAutoFilled] = useState(false);
 
   // লাইভ ডেটা — সেল বা প্রোডাক্ট বদলালে (সেভ, স্ট্যাটাস, কুরিয়ার সিঙ্ক) সাথে সাথে স্ক্রিনে আসে
   useEffect(() => {
@@ -170,6 +174,11 @@ export default function Sales() {
 
   const allColors = useMemo(
     () => Array.from(new Set(products.flatMap(p => p.colors || []))).sort(),
+    [products]
+  );
+
+  const categories = useMemo(
+    () => Array.from(new Set(products.map(p => (p.category || '').trim()).filter(Boolean))).sort(),
     [products]
   );
 
@@ -213,6 +222,7 @@ export default function Sales() {
     const p = productIndex.get(value.trim().toLowerCase());
     const patch: Partial<Line> = { model: value };
     if (p) {
+      patch.category = p.category || '';
       patch.purchase = String(p.defaultPurchasePrice || '');
       patch.selling = String(p.defaultSellingPrice || '');
       if (p.colors?.length === 1) patch.color = p.colors[0];
@@ -220,26 +230,52 @@ export default function Sales() {
     setLine(id, patch);
   };
 
+  // ক্যাটাগরি বদলালে ওই ক্যাটাগরির প্রোডাক্টের তালিকা; ক্যাটাগরি না থাকলে সব প্রোডাক্ট
+  const modelsFor = (category: string) => {
+    const cat = category.trim().toLowerCase();
+    const list = cat ? products.filter(p => (p.category || '').trim().toLowerCase() === cat) : products;
+    return list;
+  };
+
+  // ফোন নম্বর মিললে আগের সবচেয়ে নতুন অর্ডারের ঠিকানা, জেলা ও নাম বসে (খালি ঘর ছাড়া কিছু বদলায় না)
+  const onPhoneChange = (value: string) => {
+    const d = digitsOnly(value);
+    const prev = d.length === 11 && isPhone(value)
+      ? sales.find(s => digitsOnly(s.customerPhone || '') === d && (s.customerAddress || s.courierArea))
+      : undefined;
+    setAutoFilled(!!prev);
+    setForm(f => ({
+      ...f,
+      phone: value,
+      address: prev && !f.address.trim() ? prev.customerAddress || f.address : f.address,
+      district: prev && !f.district.trim() ? prev.courierArea || f.district : f.district,
+      customerRef: prev && !f.customerRef.trim() ? prev.customerRef || f.customerRef : f.customerRef,
+    }));
+  };
+
   const openAdd = () => {
     setEditId(null);
     setEditingSale(null);
     setForm(emptyForm(nextInvoice));
+    setAutoFilled(false);
     setOpen(true);
   };
 
   const openEdit = (s: Sale) => {
     setEditId(s.id);
     setEditingSale(s);
+    setAutoFilled(false);
     const lines: Line[] = (s.items && s.items.length)
       ? s.items.map(it => ({
           id: crypto.randomUUID(),
+          category: it.category || productIndex.get((it.model || it.productName || '').trim().toLowerCase())?.category || '',
           model: it.model || it.productName || '',
           color: it.color || '',
           qty: String(it.quantity || 1),
           purchase: String(it.purchasePrice || ''),
           selling: String(it.sellingPrice || ''),
         }))
-      : [{ id: crypto.randomUUID(), model: s.model || '', color: '', qty: String(s.quantity || 1), purchase: String(s.purchasePrice || ''), selling: String(s.sellingPrice || '') }];
+      : [{ id: crypto.randomUUID(), category: '', model: s.model || '', color: '', qty: String(s.quantity || 1), purchase: String(s.purchasePrice || ''), selling: String(s.sellingPrice || '') }];
     setForm({
       date: s.date || todayStr(),
       saleType: s.saleType || 'Courier Sale',
@@ -276,7 +312,7 @@ export default function Sales() {
       productId: productIndex.get(l.model.trim().toLowerCase())?.id,
       productName: l.model.trim(),
       model: l.model.trim(),
-      category: '',
+      category: l.category.trim() || productIndex.get(l.model.trim().toLowerCase())?.category || '',
       color: l.color.trim(),
       quantity: l.qty,
       purchasePrice: l.purchase,
@@ -620,9 +656,10 @@ export default function Sales() {
               </div>
               <div>
                 <label className={labelCls}>মোবাইল নম্বর</label>
-                <input type="tel" inputMode="tel" value={form.phone} onChange={e => set('phone', e.target.value)}
+                <input type="tel" inputMode="tel" value={form.phone} onChange={e => onPhoneChange(e.target.value)}
                   placeholder="01XXXXXXXXX" className={cn(inputCls, form.phone && !isPhone(form.phone) && 'border-rose-400')} />
                 {form.phone && !isPhone(form.phone) && <p className="mt-1 text-[11px] text-rose-600">১১ ডিজিট হতে হবে</p>}
+                {autoFilled && isPhone(form.phone) && <p className="mt-1 text-[11px] text-emerald-700">✓ আগের অর্ডার থেকে ঠিকানা বসানো হয়েছে</p>}
               </div>
               <div className="sm:col-span-2">
                 <label className={labelCls}>ডেলিভারি ঠিকানা</label>
@@ -640,8 +677,8 @@ export default function Sales() {
           {/* Items */}
           <Section title="📦 প্রোডাক্ট" tone="green"
             right={<Button variant="ghost" className="!py-1.5 !text-xs" onClick={() => set('lines', [...form.lines, newLine()])}>＋ আরেকটি প্রোডাক্ট</Button>}>
-            <datalist id="sale-models">
-              {products.map(p => <option key={p.id} value={p.model || p.name} />)}
+            <datalist id="sale-cats">
+              {categories.map(c => <option key={c} value={c} />)}
             </datalist>
             <datalist id="sale-colors">
               {allColors.map(col => <option key={col} value={col} />)}
@@ -649,8 +686,14 @@ export default function Sales() {
             <div className="space-y-3">
               {c.lines.map((l, i) => (
                 <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-500">আইটেম #{i + 1}</span>
+                  <datalist id={`sale-models-${l.id}`}>
+                    {modelsFor(l.category).map(p => <option key={p.id} value={p.model || p.name} />)}
+                  </datalist>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="shrink-0 text-[11px] font-semibold text-slate-500">আইটেম #{i + 1}</span>
+                    <input list="sale-cats" value={l.category} placeholder="ক্যাটাগরি (যেমন: Smart Watch)"
+                      onChange={e => setLine(l.id, { category: e.target.value })}
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:border-emerald-600 focus:outline-none" />
                     {form.lines.length > 1 && (
                       <button type="button" className="text-xs text-rose-600"
                         onClick={() => set('lines', form.lines.filter(x => x.id !== l.id))}>মুছুন</button>
@@ -658,7 +701,7 @@ export default function Sales() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-12">
                     <div className="col-span-2 sm:col-span-4">
-                      <input list="sale-models" value={l.model} placeholder="মডেল / প্রোডাক্ট"
+                      <input list={`sale-models-${l.id}`} value={l.model} placeholder="মডেল / প্রোডাক্ট"
                         onChange={e => pickModel(l.id, e.target.value)} className={inputCls} />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
