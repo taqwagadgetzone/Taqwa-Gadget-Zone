@@ -168,9 +168,10 @@ export function IconButton({
   );
 }
 
+// tone="green" — ফর্মের পুরো প্যানেল সবুজ শেডে; বাকি মোডাল সাদা থাকে
 export function Modal({
-  open, title, onClose, children, footer, wide,
-}: { open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
+  open, title, onClose, children, footer, wide, tone = 'white',
+}: { open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean; tone?: 'white' | 'green' }) {
   if (!open) return null;
   return (
     <div
@@ -179,7 +180,8 @@ export function Modal({
     >
       <div
         className={cn(
-          'flex max-h-[92vh] w-full flex-col overflow-hidden bg-white shadow-2xl',
+          'flex max-h-[92vh] w-full flex-col overflow-hidden shadow-2xl',
+          tone === 'green' ? 'bg-[#E4F2EA]' : 'bg-white',
           'rounded-t-3xl sm:rounded-2xl',
           wide ? 'sm:max-w-3xl' : 'sm:max-w-xl'
         )}
@@ -194,7 +196,11 @@ export function Modal({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
-        {footer && <div className="border-t border-slate-100 bg-white px-5 py-3">{footer}</div>}
+        {footer && (
+          <div className={cn('border-t px-5 py-3', tone === 'green' ? 'border-[#B9DCCB] bg-[#D2EADD]' : 'border-slate-100 bg-white')}>
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

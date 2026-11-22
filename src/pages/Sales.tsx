@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Sale, Product } from '../types';
@@ -609,6 +609,7 @@ export default function Sales() {
         open={open}
         onClose={() => setOpen(false)}
         wide
+        tone="green"
         title={editId ? 'সেল এডিট করুন' : 'নতুন সেল ও কুরিয়ার এন্ট্রি'}
         footer={
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -631,11 +632,11 @@ export default function Sales() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className={labelCls}>সেল টাইপ</label>
-              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-slate-100 p-1">
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-[#BFE0CE] p-1">
                 {(['Courier Sale', 'Direct Sale'] as const).map(t => (
                   <button key={t} type="button" onClick={() => set('saleType', t)}
                     className={cn('rounded-lg py-2 text-xs font-semibold transition',
-                      form.saleType === t ? 'bg-white text-emerald-900 shadow-sm' : 'text-slate-500')}>
+                      form.saleType === t ? 'bg-[#0E3B2C] text-white shadow-sm' : 'text-[#2F4F3E] hover:bg-white/50')}>
                     {t === 'Courier Sale' ? '🛵 কুরিয়ার' : '🏪 সরাসরি'}
                   </button>
                 ))}
@@ -707,9 +708,9 @@ export default function Sales() {
             right={<Button variant="ghost" className="!py-1.5 !text-xs" onClick={() => set('lines', [...form.lines, newLine()])}>＋ আরেকটি প্রোডাক্ট</Button>}>
             <div className="space-y-3">
               {c.lines.map((l, i) => (
-                <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                <div key={l.id} className="rounded-xl border border-[#9FCDB4] bg-[#EEF8F3] p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="shrink-0 text-[11px] font-semibold text-slate-500">আইটেম #{i + 1}</span>
+                    <span className="shrink-0 text-[11px] font-semibold text-[#2F4F3E]">আইটেম #{i + 1}</span>
                     <div className="min-w-0 flex-1">
                       <Suggest
                         value={l.category}
@@ -730,7 +731,7 @@ export default function Sales() {
                       <Suggest
                         value={l.model}
                         placeholder="মডেল / প্রোডাক্ট"
-                        className={inputCls}
+                        className={modelCls}
                         options={modelsFor(l.category).map(p => ({ label: p.model || p.name, sub: p.category || undefined }))}
                         onType={v => pickModel(l.id, v)}
                         onPick={v => pickModel(l.id, v)}
@@ -869,6 +870,11 @@ export default function Sales() {
 // ---------- small pieces ----------
 type SuggestOption = { label: string; sub?: string };
 
+// মডেলের ঘর — আইটেমের মধ্যে আলাদা করে দেখানোর জন্য কমলা-পীচ
+const modelCls =
+  'w-full rounded-xl border border-[#F5C9A0] bg-[#FFF1E4] px-3 py-2.5 text-sm font-semibold text-[#0E3B2C] ' +
+  'placeholder:font-normal placeholder:text-[#B9895F] focus:border-[#F26B1D] focus:outline-none focus:ring-2 focus:ring-[#F26B1D]/25 transition';
+
 // নিজস্ব সাজেশন বক্স — ঘরে লেখা থাকলেও পুরো তালিকা দেখায়, তাই আগের লেখা মুছতে হয় না
 function Suggest({
   value, options, onType, onPick, placeholder, className,
@@ -877,16 +883,21 @@ function Suggest({
   placeholder?: string; className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const q = value.trim().toLowerCase();
   const exact = !!q && options.some(o => o.label.toLowerCase() === q);
   const shown = !q || exact ? options : options.filter(o => o.label.toLowerCase().includes(q));
+  // ফোকাস হলে ঘরটা ও তার সাজেশন বক্স স্ক্রিনের মাঝে আনে, যাতে তালিকা নিচে আটকে না থাকে
+  const reveal = () => {
+    window.setTimeout(() => wrapRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
+  };
   return (
-    <div className="relative">
+    <div className="relative" ref={wrapRef}>
       <input
         value={value}
         placeholder={placeholder}
         className={className}
-        onFocus={() => setOpen(true)}
+        onFocus={() => { setOpen(true); reveal(); }}
         onBlur={() => setOpen(false)}
         onChange={e => { onType(e.target.value); setOpen(true); }}
       />
@@ -912,19 +923,21 @@ function Suggest({
 function Section({
   title, tone, children, right,
 }: { title: string; tone: 'blue' | 'green' | 'amber' | 'violet' | 'slate'; children: React.ReactNode; right?: React.ReactNode }) {
-  // সেকশনের উপরের রঙিন দাগই শুধু টোন বোঝায়; বাকি অংশ সাদা, যাতে ইনপুট পড়া সহজ থাকে
-  const bar = {
-    blue: 'bg-blue-500',
-    green: 'bg-[#14513B]',
-    amber: 'bg-[#F26B1D]',
-    violet: 'bg-violet-500',
-    slate: 'bg-slate-400',
+  // প্রতিটি সেকশনের নিজের সবুজ শেড; উপরের মোটা দাগ সেই শেডের গাঢ় রূপ। ইনপুট সাদা রাখা হয়েছে, তাই পড়া সহজ।
+  const shade = {
+    blue: { bg: '#D3EDE4', bar: '#0F766E' },
+    green: { bg: '#C4E3D1', bar: '#14513B' },
+    amber: { bg: '#DCEEC9', bar: '#5B8E2E' },
+    violet: { bg: '#CFE5D9', bar: '#2F4F3E' },
+    slate: { bg: '#DDF0E7', bar: '#0B4F4A' },
   }[tone];
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#EBCFB2] bg-white p-4 pt-5 shadow-sm">
-      <div className={cn('absolute inset-x-0 top-0 h-1', bar)} />
+    <div
+      className="rounded-2xl border border-[#A9D3BD] border-t-4 p-4 shadow-sm"
+      style={{ background: shade.bg, borderTopColor: shade.bar }}
+    >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="text-xs font-bold tracking-tight text-slate-800">{title}</span>
+        <span className="text-sm font-bold tracking-tight text-[#0E3B2C]">{title}</span>
         {right}
       </div>
       {children}
