@@ -56,10 +56,11 @@ jobs:
 
       - name: Upload dist to Hostinger over FTP
         # clean-slate বন্ধ রাখা হয়েছে: সার্ভারের steadfast.php ও অন্য ফাইল মুছবে না।
+        # FTP লগইন ডিরেক্টরিই public_html, তাই server-dir ./ (public_html/ লিখলে public_html/public_html তৈরি হতো)।
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: dist/
-          server-dir: public_html/
+          server-dir: ./
