@@ -1037,12 +1037,28 @@ function CopyLinkButton({ link }: { link: string }) {
   );
 }
 
+// WhatsApp-এ সরাসরি মেসেজ — ফোন নম্বর ১১ ডিজিট হলে; ট্র্যাকিং লিংক থাকলে মেসেজে যুক্ত হয়
+// মেসেজ খুললে ব্যবহারকারী নিজে পড়ে পাঠাবেন; অ্যাপ নিজে কিছু পাঠায় না
+function whatsappUrl(s: Sale): string | null {
+  const d = digitsOnly(s.customerPhone || '');
+  if (!isPhone(d)) return null;
+  const greet = s.customerRef?.trim() ? `আসসালামু আলাইকুম ${s.customerRef.trim()},` : 'আসসালামু আলাইকুম,';
+  const body = s.courierTrackingLink
+    ? `${greet}\nTaqwa Gadget Zone থেকে বলছি। আপনার অর্ডারের ট্র্যাকিং লিংক: ${s.courierTrackingLink}`
+    : `${greet}\nTaqwa Gadget Zone থেকে বলছি।`;
+  return `https://wa.me/880${d.slice(1)}?text=${encodeURIComponent(body)}`;
+}
+
 function Actions({ s, busy, onEdit, onDelete, onSync }: RowProps) {
   const canSync = isTrackable(s);
+  const wa = whatsappUrl(s);
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center justify-end gap-1.5">
       <IconButton tone="blue" title="এডিট" onClick={() => onEdit(s)}>✏️</IconButton>
       {s.courierTrackingLink && <CopyLinkButton link={s.courierTrackingLink} />}
+      {wa && (
+        <IconButton tone="wa" title="WhatsApp-এ মেসেজ" onClick={() => window.open(wa, '_blank', 'noopener,noreferrer')}>💬</IconButton>
+      )}
       {canSync && (
         <IconButton tone="amber" title="Steadfast স্ট্যাটাস আনুন" disabled={busy} onClick={() => onSync(s)}>{busy ? '…' : '🔄'}</IconButton>
       )}
@@ -1126,7 +1142,7 @@ function SaleCard(p: RowProps) {
         {s.courierTrackingCode && <span className="font-mono text-blue-700">{s.courierTrackingCode}</span>}
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         {isCourier
           ? <StatusSelect value={s.courierDeliveryStatus || 'pending'} disabled={busy} onChange={v => onStatus(s.id, v)} />
           : <Badge tone="green">সরাসরি</Badge>}

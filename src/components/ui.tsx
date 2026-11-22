@@ -147,8 +147,9 @@ export function Button({
 
 export function IconButton({
   tone = 'slate', title, onClick, disabled, children,
-}: { tone?: 'blue' | 'red' | 'amber' | 'slate' | 'green'; title: string; onClick: () => void; disabled?: boolean; children: ReactNode }) {
+}: { tone?: 'blue' | 'red' | 'amber' | 'slate' | 'green' | 'wa'; title: string; onClick: () => void; disabled?: boolean; children: ReactNode }) {
   const c = {
+    wa:    'bg-[#E3F8EC] text-[#128C7E] hover:bg-[#CFF3DF]',
     green: 'bg-[#E8F3EE] text-[#14513B] hover:bg-[#CFE6DA]',
     blue:  'bg-blue-50 text-blue-700 hover:bg-blue-100',
     red:   'bg-rose-50 text-rose-600 hover:bg-rose-100',
