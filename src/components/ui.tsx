@@ -24,7 +24,7 @@ export function Card({ children, className }: { children: ReactNode; className?:
   return (
     <div
       className={cn(
-        'rounded-2xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(6,78,59,0.05),0_12px_28px_-16px_rgba(6,78,59,0.25)]',
+        'rounded-2xl border border-emerald-100/80 bg-gradient-to-b from-white to-emerald-50/40 shadow-[0_1px_2px_rgba(6,78,59,0.05),0_12px_28px_-16px_rgba(6,78,59,0.25)]',
         className
       )}
     >
@@ -75,12 +75,25 @@ const TONE: Record<Tone, { text: string; bg: string; ring: string; bar: string }
   slate:  { text: 'text-slate-700',   bg: 'bg-slate-100',  ring: 'ring-slate-200',   bar: 'linear-gradient(90deg,#64748b,#cbd5e1)' },
 };
 
+// কার্ডের হালকা রঙিন আভা — প্রতিটি মেট্রিকের নিজের রঙে
+const WASH: Record<Tone, string> = {
+  green:  'from-white to-emerald-50',
+  forest: 'from-white to-green-50',
+  lime:   'from-white to-lime-50',
+  sage:   'from-white to-emerald-50/70',
+  red:    'from-white to-rose-50',
+  blue:   'from-white to-blue-50',
+  amber:  'from-white to-amber-50',
+  violet: 'from-white to-violet-50',
+  slate:  'from-white to-slate-50',
+};
+
 export function StatCard({
   label, value, sub, tone = 'slate', icon,
 }: { label: string; value: string; sub?: string; tone?: Tone; icon?: ReactNode }) {
   const t = TONE[tone];
   return (
-    <Card className="relative overflow-hidden p-4">
+    <Card className={cn('relative overflow-hidden bg-gradient-to-br p-4', WASH[tone])}>
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: t.bar }} />
       <div className="flex items-start justify-between gap-2">
         <span className="text-xs font-medium text-slate-500">{label}</span>
