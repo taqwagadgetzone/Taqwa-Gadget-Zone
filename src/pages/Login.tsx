@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Button, inputCls, labelCls } from '../components/ui';
 
 export default function Login() {
   const { login } = useAuth();
@@ -25,51 +26,48 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
-      <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-3">📦</div>
-          <h1 className="text-2xl font-bold text-white">Taqwa Gadget Zone</h1>
-          <p className="text-gray-400 mt-1">স্টক ম্যানেজমেন্ট সিস্টেম</p>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0d2a1f] via-[#1a3c2e] to-[#24603f] px-4 py-10">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+        <div className="mb-6 text-center">
+          <img src="/logo.png" alt="Taqwa Gadget Zone" className="mx-auto h-auto w-48 sm:w-56" />
+          <p className="mt-3 text-sm text-slate-500">স্টক ম্যানেজমেন্ট ও ব্যবসার হিসাব</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">ইমেইল</label>
+            <label className={labelCls}>ইমেইল</label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-blue-500 focus:outline-none"
+              autoComplete="email"
+              className={inputCls}
               placeholder="আপনার ইমেইল"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">পাসওয়ার্ড</label>
+            <label className={labelCls}>পাসওয়ার্ড</label>
             <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-blue-500 focus:outline-none"
+              autoComplete="current-password"
+              className={inputCls}
               placeholder="পাসওয়ার্ড"
             />
           </div>
 
           {error && (
-            <div className="bg-red-900/50 border border-red-500 text-red-300 rounded-lg px-4 py-3 text-sm">
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-colors"
-          >
+          <Button type="submit" variant="primary" disabled={loading} className="w-full py-3">
             {loading ? 'লগইন হচ্ছে...' : 'লগইন করুন'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

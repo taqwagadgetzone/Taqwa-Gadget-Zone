@@ -13,5 +13,5 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = getFirestore(app, 'ai-studio-taqwagadgetzone-63d8bb83-bde9-4918-8a57-e8b2741a455b');
 export default app;

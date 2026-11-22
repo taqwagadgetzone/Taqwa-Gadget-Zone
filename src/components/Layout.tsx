@@ -2,11 +2,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 
 const navItems = [
-  { to: '/', label: 'ড্যাশবোর্ড', icon: '📊' },
-  { to: '/products', label: 'প্রডাক্ট স্টক', icon: '📦' },
-  { to: '/sales', label: 'সেলস', icon: '🛵' },
-  { to: '/expenses', label: 'খরচ', icon: '💸' },
-  { to: '/reports', label: 'রিপোর্ট', icon: '📅' },
+  { to: '/', label: 'ড্যাশবোর্ড', short: 'হোম', icon: '📊' },
+  { to: '/sales', label: 'সেলস ও কুরিয়ার', short: 'সেলস', icon: '🛵' },
+  { to: '/products', label: 'প্রোডাক্ট ও স্টক', short: 'স্টক', icon: '📦' },
+  { to: '/expenses', label: 'খরচ', short: 'খরচ', icon: '💸' },
+  { to: '/reports', label: 'রিপোর্ট', short: 'রিপোর্ট', icon: '📅' },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -19,49 +19,83 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
-      {/* Sidebar */}
-      <aside className="w-56 bg-gray-800 flex flex-col fixed h-full z-10">
-        <div className="p-4 border-b border-gray-700">
-          <div className="text-xl font-bold text-white">📦 TGZ</div>
-          <div className="text-xs text-gray-400 mt-1 truncate">{user?.email}</div>
-        </div>
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      {/* Top bar — মোবাইলে ছোট, ল্যাপটপে নেভিগেশন সহ */}
+      <header className="fixed inset-x-0 top-0 z-50 bg-[#1a3c2e] text-white shadow-md">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-3 sm:px-4 md:h-16">
+          <div className="flex shrink-0 items-center rounded-lg bg-white px-2 py-1 shadow-sm">
+            <img src="/logo.png" alt="Taqwa Gadget Zone" className="h-8 w-auto md:h-10" />
+          </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+          {/* Laptop/tablet navigation */}
+          <nav className="hidden min-w-0 flex-1 items-center gap-1 md:flex">
+            {navItems.map(item => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    isActive ? 'bg-white/15 text-white' : 'text-emerald-200 hover:bg-white/10 hover:text-white'
+                  }`
+                }
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex shrink-0 items-center gap-3">
+            <span className="hidden text-xs text-emerald-200 xl:inline">{user?.email}</span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-emerald-50 transition hover:bg-white/20"
+            >
+              লগআউট
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-3 pb-28 pt-16 sm:px-4 md:pb-10 md:pt-20">
+        {children}
+      </main>
+
+      {/* Mobile bottom tabs — এক হাতে সহজে ব্যবহারের জন্য */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="mx-auto grid max-w-md grid-cols-5">
           {navItems.map(item => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                `flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition ${
+                  isActive ? 'text-emerald-800' : 'text-slate-500'
                 }`
               }
             >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`flex h-7 w-12 items-center justify-center rounded-full text-base transition ${
+                      isActive ? 'bg-emerald-100' : ''
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  <span>{item.short}</span>
+                </>
+              )}
             </NavLink>
           ))}
-        </nav>
-
-        <div className="p-3 border-t border-gray-700">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-900/50 hover:text-red-300 transition-colors"
-          >
-            <span>🚪</span>
-            <span>লগআউট</span>
-          </button>
         </div>
-      </aside>
-
-      {/* Main content */}
-      <main className="flex-1 ml-56 p-6 overflow-auto">
-        {children}
-      </main>
+      </nav>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export interface Product {
 
 export interface SaleItem {
   id: string;
+  productId?: string;
   productName: string;
   model: string;
   category: string;
@@ -55,6 +56,7 @@ export interface Sale {
   courierTrackingCode?: string;
   courierTrackingId?: string;
   courierConsignmentId?: number;
+  steadfastConsignmentId?: number | string;
   courierDeliveryStatus?: string;
   courierOrderSentAt?: string;
   orderStatus?: string;
@@ -67,6 +69,13 @@ export interface Sale {
   customerRef?: string;
   customerChannel?: string;
   deliveryNote?: string;
+  // Order fields (v2)
+  invoice?: string;
+  paymentMethod?: string;
+  trxId?: string;
+  customerDistrict?: string;
+  // স্টক ট্র্যাকিং: true = এখন স্টক থেকে বেরিয়ে আছে, false = ফেরত এসেছে, undefined = আগের ডেটা (স্টক স্পর্শ করা হয় না)
+  stockAdjusted?: boolean;
 }
 
 export interface Expense {

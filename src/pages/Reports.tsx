@@ -1,150 +1,332 @@
-import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
-import type { Sale, Expense } from '../types';
-
-type ReportMode = 'daily' | 'monthly';
+import { useMemo, useState } from 'react';
+import { useBusinessData } from '../hooks/useBusinessData';
+import {
+  summarize, byChannel, dailySeries, datesOf, inRange, expenseByCategory, topProducts,
+  courierStatusCounts, isCourier, shiftMonth, downloadCSV, saleCost, saleProfit,
+  AD_CATEGORIES, CHANNELS, type Range, type Channel,
+} from '../services/accounting';
+import {
+  BDT, USD, cn, inputCls, Card, PageHeader, StatCard, Badge, Chip, Button, Spinner, Empty,
+} from '../components/ui';
+const todayStr = () => new Date().toISOString().split('T')[0];
+const monthNow = () => todayStr().slice(0, 7);
+const monthLabel = (m: string) => new Date(m + '-01').toLocaleString('bn-BD', { month: 'long', year: 'numeric' });
+const pct = (n: number, base: number) => (base ? `${Math.round((n / base) * 100)}%` : '—');
+const delta = (cur: number, prev: number) => {
+  if (!prev) return cur ? '+নতুন' : '—';
+  const d = Math.round(((cur - prev) / Math.abs(prev)) * 100);
+  return `${d >= 0 ? '▲' : '▼'} ${Math.abs(d)}%`;
+};
 
 export default function Reports() {
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<ReportMode>('daily');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
+  const { sales, expenses, products, loading, error } = useBusinessData();
+  const [kind, setKind] = useState<'day' | 'month' | 'all'>('month');
+  const [day, setDay] = useState(todayStr());
+  const [month, setMonth] = useState(monthNow());
+  const today = todayStr();
 
-  useEffect(() => {
-    const load = async () => {
-      const [salesSnap, expSnap] = await Promise.all([
-        getDocs(collection(db, 'sales')),
-        getDocs(collection(db, 'expenses')),
-      ]);
-      setSales(salesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Sale[]);
-      setExpenses(expSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Expense[]);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  const filterKey = mode === 'daily' ? selectedDate : selectedMonth;
-  const filteredSales = sales.filter(s =>
-    mode === 'daily' ? s.date === filterKey : s.date?.startsWith(filterKey)
-  );
-  const filteredExpenses = expenses.filter(e =>
-    mode === 'daily' ? e.date === filterKey : e.date?.startsWith(filterKey)
+  const range: Range = useMemo(
+    () => (kind === 'day' ? { kind: 'day', date: day } : kind === 'month' ? { kind: 'month', month } : { kind: 'all' }),
+    [kind, day, month]
   );
 
-  const totalRevenue = filteredSales.reduce((sum, s) => sum + (s.salesAmount || 0), 0);
-  const totalProfit = filteredSales.reduce((sum, s) => sum + (s.netProfit || 0), 0);
-  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const netIncome = totalProfit - totalExpenses;
-  const courierSales = filteredSales.filter(s => s.saleType === 'Courier Sale');
-  const directSales = filteredSales.filter(s => s.saleType !== 'Courier Sale');
+  const salesR = useMemo(() => sales.filter(s => inRange(s.date, range)), [sales, range]);
+  const expR = useMemo(() => expenses.filter(e => inRange(e.date, range)), [expenses, range]);
+  const sm = useMemo(() => summarize(salesR, expR), [salesR, expR]);
+  const chan = useMemo(() => byChannel(salesR, expR), [salesR, expR]);
+  const days = useMemo(() => dailySeries(sales, expenses, datesOf(range, today)).reverse(), [sales, expenses, range, today]);
+  const dayMax = Math.max(1, ...days.map(d => d.sales));
+  const cats = useMemo(() => expenseByCategory(expR), [expR]);
+  const top = useMemo(() => topProducts(salesR, 10), [salesR]);
+  const courier = useMemo(() => courierStatusCounts(salesR), [salesR]);
 
-  if (loading) return <div className="text-white text-center mt-20">লোড হচ্ছে...</div>;
+  // আগের মাসের তুলনা (শুধু মাস ভিউতে)
+  const prev = useMemo(() => {
+    if (kind !== 'month') return null;
+    const pm = shiftMonth(month, -1);
+    const pr: Range = { kind: 'month', month: pm };
+    return summarize(sales.filter(s => inRange(s.date, pr)), expenses.filter(e => inRange(e.date, pr)));
+  }, [kind, month, sales, expenses]);
+
+  if (loading) return <Spinner icon="📅" text="রিপোর্ট তৈরি হচ্ছে..." />;
+  if (error) return <Card className="p-6 text-sm text-rose-700">ডেটা আনতে সমস্যা: {error}</Card>;
+
+  const label = kind === 'day' ? day : kind === 'month' ? monthLabel(month) : 'সব সময়';
+
+  const exportCSV = () => {
+    const rows: (string | number)[][] = [
+      ['রিপোর্ট', label],
+      [],
+      ['সারাংশ'],
+      ['মোট বিক্রি', sm.sales], ['পণ্যের ক্রয়মূল্য', sm.cogs], ['কুরিয়ার চার্জ', sm.courier],
+      ['কন্ডিশন চার্জ', sm.condition], ['সেলস লাভ', sm.salesProfit], ['মোট খরচ', sm.expenses],
+      ['বিজ্ঞাপন (Facebook)', sm.ads.Facebook], ['বিজ্ঞাপন (TikTok)', sm.ads.TikTok],
+      ['নেট লাভ', sm.netProfit], ['অগ্রিম আদায়', sm.advance], ['COD বাকি', sm.codPending], ['COD আদায়', sm.codCollected],
+      [],
+      ['সেলস তালিকা'],
+      ['তারিখ', 'ইনভয়েস', 'কাস্টমার', 'ফোন', 'চ্যানেল', 'প্রোডাক্ট', 'বিল', 'অগ্রিম', 'COD', 'কুরিয়ার চার্জ', 'কন্ডিশন', 'ক্রয়মূল্য', 'লাভ', 'স্ট্যাটাস'],
+      ...salesR.map(s => [
+        s.date, s.invoice || '', s.customerRef || '', s.customerPhone || '', s.customerChannel || '',
+        s.items?.length ? s.items.map(i => i.model || i.productName).join(' + ') : s.model || '',
+        s.salesAmount || 0, s.advanceAmount || 0, s.codAmount || 0, s.courierCharge || 0,
+        s.courierConditionCost || 0, saleCost(s), saleProfit(s), s.courierDeliveryStatus || 'সরাসরি',
+      ]),
+      [],
+      ['খরচের তালিকা'],
+      ['তারিখ', 'ক্যাটাগরি', 'মডেল', 'বিবরণ', 'ডলার', 'রেট', 'টাকা'],
+      ...expR.map(e => [e.date, e.category, e.targetModel || '', e.description, e.dollarAmount || '', e.dollarRate || '', e.amount]),
+    ];
+    downloadCSV(`taqwa-report-${kind === 'day' ? day : kind === 'month' ? month : 'all'}.csv`, rows);
+  };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-white mb-6">রিপোর্ট</h1>
+    <div className="pb-8">
+      <PageHeader
+        title="রিপোর্ট ও লাভ-ক্ষতি"
+        subtitle={`${label} — বিক্রি, খরচ, চ্যানেল লাভ ও নগদ হিসাব`}
+        actions={
+          <>
+            <div className="flex items-center gap-2">
+              <Chip active={kind === 'day'} onClick={() => setKind('day')}>দৈনিক</Chip>
+              <Chip active={kind === 'month'} onClick={() => setKind('month')}>মাসিক</Chip>
+              <Chip active={kind === 'all'} onClick={() => setKind('all')}>সব</Chip>
+            </div>
+            {kind === 'day' && (
+              <input type="date" value={day} onChange={e => setDay(e.target.value)} className={cn(inputCls, 'w-auto py-1.5 text-xs')} />
+            )}
+            {kind === 'month' && (
+              <input type="month" value={month} onChange={e => setMonth(e.target.value)} className={cn(inputCls, 'w-auto py-1.5 text-xs')} />
+            )}
+            <Button variant="accent" onClick={exportCSV} className="!py-1.5 !text-xs">⬇ CSV ডাউনলোড</Button>
+          </>
+        }
+      />
 
-      {/* Mode selector */}
-      <div className="flex gap-3 mb-5">
-        <button
-          onClick={() => setMode('daily')}
-          className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-colors ${mode === 'daily' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-        >
-          📅 দৈনিক রিপোর্ট
-        </button>
-        <button
-          onClick={() => setMode('monthly')}
-          className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-colors ${mode === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-        >
-          📆 মাসিক রিপোর্ট
-        </button>
+      {/* KPI */}
+      <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="মোট বিক্রি" value={BDT(sm.sales)}
+          sub={prev ? `আগের মাস ${delta(sm.sales, prev.sales)}` : `${sm.orders - sm.lost} কার্যকর অর্ডার`} tone="blue" icon="💰" />
+        <StatCard label="নেট লাভ" value={BDT(sm.netProfit)}
+          sub={prev ? `আগের মাস ${delta(sm.netProfit, prev.netProfit)}` : 'সেলস লাভ − সব খরচ'}
+          tone={sm.netProfit >= 0 ? 'green' : 'red'} icon="📈" />
+        <StatCard label="মোট খরচ" value={BDT(sm.expenses)}
+          sub={prev ? `আগের মাস ${delta(sm.expenses, prev.expenses)}` : `${expR.length}টি এন্ট্রি`} tone="red" icon="💸" />
+        <StatCard label="ডলার পেমেন্ট" value={USD(sm.usd)} sub="বিজ্ঞাপনের ডলার" tone="violet" icon="💵" />
+      </div>
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="অগ্রিম আদায়" value={BDT(sm.advance)} sub="কুরিয়ার আগেই পাওয়া" tone="green" icon="💳" />
+        <StatCard label="COD বাকি" value={BDT(sm.codPending)} sub={`${sm.open}টি কুরিয়ারে`} tone="amber" icon="🏍️" />
+        <StatCard label="COD আদায়" value={BDT(sm.codCollected)} sub="ডেলিভারি হওয়া" tone="green" icon="✅" />
+        <StatCard label="অর্ডার" value={`${sm.orders}`} sub={`ডেলিভারি ${sm.delivered} · ফেরত/বাতিল ${sm.lost}`} tone="slate" icon="🛒" />
       </div>
 
-      {/* Date picker */}
-      <div className="mb-6">
-        {mode === 'daily' ? (
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            className="bg-gray-700 text-white rounded-lg px-4 py-2.5 border border-gray-600 focus:border-blue-500 focus:outline-none"
-          />
-        ) : (
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            className="bg-gray-700 text-white rounded-lg px-4 py-2.5 border border-gray-600 focus:border-blue-500 focus:outline-none"
-          />
+      {/* Channel */}
+      <h2 className="mb-3 text-sm font-bold text-slate-700">চ্যানেল অনুযায়ী লাভ</h2>
+      <div className="mb-5 grid gap-3 md:grid-cols-3">
+        {CHANNELS.map(ch => <ChannelCard key={ch} ch={ch} r={chan[ch]} />)}
+      </div>
+
+      <div className="mb-5 grid gap-4 xl:grid-cols-5">
+        {/* P&L */}
+        <Card className="p-4 xl:col-span-3">
+          <h2 className="mb-3 text-sm font-bold text-slate-800">লাভ-ক্ষতির বিবরণী (P&amp;L)</h2>
+          <PLTable sm={sm} />
+        </Card>
+
+        {/* Cash */}
+        <Card className="p-4 xl:col-span-2">
+          <h2 className="mb-1 text-sm font-bold text-slate-800">নগদ হিসাব</h2>
+          <p className="mb-3 text-[11px] text-slate-400">আনুমানিক — স্টক কেনার টাকা এখানে ধরা নেই</p>
+          <div className="space-y-2.5 text-sm">
+            <Row label="অগ্রিম আদায়" value={sm.advance} tone="green" />
+            <Row label="COD আদায় (ডেলিভারি হওয়া)" value={sm.codCollected} tone="green" />
+            <Row label="মোট নগদ আয়" value={sm.advance + sm.codCollected} bold />
+            <Row label="খরচ পরিশোধ" value={-sm.expenses} tone="red" />
+            <div className="my-1 border-t border-slate-100" />
+            <Row label="নগদ উদ্বৃত্ত" value={sm.advance + sm.codCollected - sm.expenses} bold tone={sm.advance + sm.codCollected - sm.expenses >= 0 ? 'green' : 'red'} />
+            <div className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+              কুরিয়ারে আছে <b>{BDT(sm.codPending)}</b> — ডেলিভারি হলে এটি আদায় হবে।
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div className="mb-5 grid gap-4 xl:grid-cols-2">
+        {/* Expense by category */}
+        <Card className="p-4">
+          <h2 className="mb-3 text-sm font-bold text-slate-800">খরচ ক্যাটাগরি অনুযায়ী</h2>
+          {cats.length === 0 ? <div className="py-6 text-center text-sm text-slate-400">এই সময়ে খরচ নেই</div> : (
+            <ul className="space-y-3">
+              {cats.map(([c, v]) => (
+                <li key={c}>
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-700">
+                      {AD_CATEGORIES.includes(c) && <Badge tone={c === 'TikTok Ads' ? 'violet' : 'blue'}>বিজ্ঞাপন</Badge>}
+                      {c}
+                    </span>
+                    <span className="font-bold tabular-nums">{BDT(v)} <span className="font-normal text-slate-400">· {pct(v, sm.expenses)}</span></span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className={cn('h-full rounded-full', AD_CATEGORIES.includes(c) ? 'bg-blue-500' : 'bg-amber-500')}
+                      style={{ width: `${sm.expenses ? (v / sm.expenses) * 100 : 0}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        {/* Courier */}
+        <Card className="p-4">
+          <h2 className="mb-3 text-sm font-bold text-slate-800">কুরিয়ার স্ট্যাটাস</h2>
+          {Object.keys(courier).length === 0 ? <div className="py-6 text-center text-sm text-slate-400">কুরিয়ার অর্ডার নেই</div> : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {Object.entries(courier).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
+                <div key={k} className="rounded-xl bg-slate-50 p-3">
+                  <div className="text-[11px] text-slate-500">{k.replace(/_/g, ' ')}</div>
+                  <div className="text-lg font-bold tabular-nums">{v}</div>
+                  <div className="text-[11px] text-slate-400">{pct(v, salesR.filter(isCourier).length)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Top products */}
+      <Card className="mb-5 overflow-hidden">
+        <div className="border-b border-slate-100 px-4 py-3"><h2 className="text-sm font-bold text-slate-800">সেরা প্রোডাক্ট</h2></div>
+        {top.length === 0 ? <Empty icon="📦" text="এই সময়ে বিক্রি নেই" /> : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
+                <tr><th className="px-4 py-2.5">#</th><th className="px-4 py-2.5">প্রোডাক্ট</th><th className="px-4 py-2.5 text-right">বিক্রি (পিস)</th><th className="px-4 py-2.5 text-right">আয়</th><th className="px-4 py-2.5 text-right">লাভ</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {top.map((p, i) => (
+                  <tr key={p.name} className="hover:bg-slate-50/70">
+                    <td className="px-4 py-2.5 text-slate-400">{i + 1}</td>
+                    <td className="px-4 py-2.5 font-medium text-slate-900">{p.name}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{p.qty}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{BDT(p.revenue)}</td>
+                    <td className={cn('px-4 py-2.5 text-right font-semibold tabular-nums', p.profit >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(p.profit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
+        {products.length > 0 && <div className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">স্টক ভ্যালু (বর্তমান): {BDT(products.reduce((s, p) => s + (p.stockValue || 0), 0))}</div>}
+      </Card>
+
+      {/* Daily */}
+      <Card className="overflow-hidden">
+        <div className="border-b border-slate-100 px-4 py-3">
+          <h2 className="text-sm font-bold text-slate-800">
+            {kind === 'day' ? 'দিনের হিসাব' : kind === 'month' ? 'দিন অনুযায়ী হিসাব' : 'শেষ ৩০ দিনের হিসাব'}
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
+              <tr>
+                <th className="px-4 py-2.5">তারিখ</th>
+                <th className="px-4 py-2.5 text-right">অর্ডার</th>
+                <th className="px-4 py-2.5 text-right">বিক্রি</th>
+                <th className="px-4 py-2.5 text-right">লাভ</th>
+                <th className="px-4 py-2.5 text-right">খরচ</th>
+                <th className="px-4 py-2.5 text-right">নিট</th>
+                <th className="w-40 px-4 py-2.5">বিক্রির গ্রাফ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {days.map(d => (
+                <tr key={d.date} className={cn('hover:bg-slate-50/70', d.date === today && 'bg-emerald-50/50')}>
+                  <td className="px-4 py-2.5 tabular-nums">{d.date}{d.date === today && <span className="ml-2 text-[10px] font-bold text-emerald-700">আজ</span>}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">{d.orders || '—'}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">{d.sales ? BDT(d.sales) : '—'}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-emerald-700">{d.profit ? BDT(d.profit) : '—'}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-rose-600">{d.expenses ? BDT(d.expenses) : '—'}</td>
+                  <td className={cn('px-4 py-2.5 text-right font-semibold tabular-nums', d.net >= 0 ? 'text-slate-900' : 'text-rose-600')}>{d.sales || d.expenses ? BDT(d.net) : '—'}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-blue-500/80" style={{ width: `${(d.sales / dayMax) * 100}%` }} />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function ChannelCard({ ch, r }: { ch: Channel; r: ReturnType<typeof byChannel>[Channel] }) {
+  const tone = ch === 'Facebook' ? 'blue' : ch === 'TikTok' ? 'violet' : 'slate';
+  const icon = ch === 'Facebook' ? '📘' : ch === 'TikTok' ? '🎵' : '🛒';
+  return (
+    <Card className="p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-bold text-slate-900">{icon} {ch === 'Other' ? 'অন্যান্য / সরাসরি' : ch}</span>
+        <Badge tone={tone}>{r.orders} অর্ডার</Badge>
       </div>
+      <dl className="space-y-1.5 text-sm">
+        <div className="flex justify-between"><dt className="text-slate-500">বিক্রি</dt><dd className="font-semibold tabular-nums">{BDT(r.sales)}</dd></div>
+        <div className="flex justify-between"><dt className="text-slate-500">সেলস লাভ</dt><dd className="font-semibold tabular-nums text-emerald-700">{BDT(r.profit)}</dd></div>
+        {ch !== 'Other' && <div className="flex justify-between"><dt className="text-slate-500">বিজ্ঞাপন খরচ</dt><dd className="font-semibold tabular-nums text-rose-600">− {BDT(r.ads)}</dd></div>}
+        <div className="flex justify-between border-t border-slate-100 pt-1.5"><dt className="font-semibold text-slate-700">নিট লাভ</dt>
+          <dd className={cn('font-bold tabular-nums', r.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.net)}</dd></div>
+      </dl>
+      {ch !== 'Other' && <div className="mt-2 text-[11px] text-slate-500">ROAS <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b></div>}
+    </Card>
+  );
+}
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-green-900/50 border border-green-700 rounded-xl p-4">
-          <div className="text-green-400 text-xs mb-1">মোট বিক্রয়</div>
-          <div className="text-white font-bold text-xl">৳{totalRevenue.toLocaleString()}</div>
-          <div className="text-green-400 text-xs">{filteredSales.length}টি অর্ডার</div>
-        </div>
-        <div className="bg-blue-900/50 border border-blue-700 rounded-xl p-4">
-          <div className="text-blue-400 text-xs mb-1">মোট মুনাফা</div>
-          <div className="text-white font-bold text-xl">৳{totalProfit.toLocaleString()}</div>
-          <div className="text-blue-400 text-xs">বিক্রয় থেকে</div>
-        </div>
-        <div className="bg-red-900/50 border border-red-700 rounded-xl p-4">
-          <div className="text-red-400 text-xs mb-1">মোট খরচ</div>
-          <div className="text-white font-bold text-xl">৳{totalExpenses.toLocaleString()}</div>
-          <div className="text-red-400 text-xs">{filteredExpenses.length}টি এন্ট্রি</div>
-        </div>
-        <div className={`${netIncome >= 0 ? 'bg-emerald-900/50 border-emerald-700' : 'bg-orange-900/50 border-orange-700'} border rounded-xl p-4`}>
-          <div className={`${netIncome >= 0 ? 'text-emerald-400' : 'text-orange-400'} text-xs mb-1`}>নেট আয়</div>
-          <div className="text-white font-bold text-xl">৳{netIncome.toLocaleString()}</div>
-          <div className={`${netIncome >= 0 ? 'text-emerald-400' : 'text-orange-400'} text-xs`}>
-            {netIncome >= 0 ? 'লাভ' : 'লোকসান'}
-          </div>
-        </div>
-      </div>
+function Row({ label, value, bold, tone }: { label: string; value: number; bold?: boolean; tone?: 'green' | 'red' }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className={cn(bold ? 'font-bold text-slate-900' : 'text-slate-600')}>{label}</span>
+      <span className={cn('tabular-nums', bold ? 'font-bold' : 'font-semibold',
+        tone === 'green' && 'text-emerald-700', tone === 'red' && 'text-rose-600')}>{BDT(value)}</span>
+    </div>
+  );
+}
 
-      {/* Sales breakdown */}
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-gray-800 rounded-xl p-4">
-          <h3 className="text-white font-semibold mb-3">🛵 কুরিয়ার সেলস ({courierSales.length}টি)</h3>
-          <div className="text-2xl font-bold text-green-400">
-            ৳{courierSales.reduce((s, x) => s + (x.salesAmount || 0), 0).toLocaleString()}
-          </div>
-          <div className="text-sm text-gray-400 mt-1">
-            COD: ৳{courierSales.reduce((s, x) => s + (x.codAmount || 0), 0).toLocaleString()}
-          </div>
-        </div>
-        <div className="bg-gray-800 rounded-xl p-4">
-          <h3 className="text-white font-semibold mb-3">🏪 সরাসরি বিক্রয় ({directSales.length}টি)</h3>
-          <div className="text-2xl font-bold text-blue-400">
-            ৳{directSales.reduce((s, x) => s + (x.salesAmount || 0), 0).toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      {/* Expense breakdown */}
-      {filteredExpenses.length > 0 && (
-        <div className="bg-gray-800 rounded-xl p-4">
-          <h3 className="text-white font-semibold mb-3">💸 খরচের বিবরণ</h3>
-          <div className="space-y-2">
-            {filteredExpenses.map(e => (
-              <div key={e.id} className="flex justify-between text-sm">
-                <span className="text-gray-300">{e.description} <span className="text-gray-500">({e.category})</span></span>
-                <span className="text-red-400">৳{(e.amount || 0).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {filteredSales.length === 0 && filteredExpenses.length === 0 && (
-        <div className="text-center text-gray-500 mt-10">এই সময়কালে কোনো ডেটা নেই</div>
-      )}
+function PLTable({ sm }: { sm: ReturnType<typeof summarize> }) {
+  const base = sm.sales;
+  const otherExp = sm.expenses - sm.adTotal;
+  const lines: { label: string; value: number; kind: 'add' | 'sub' | 'total' | 'final' }[] = [
+    { label: 'মোট বিক্রি (ডেলিভারি সহ)', value: sm.sales, kind: 'add' },
+    { label: '− পণ্যের ক্রয়মূল্য', value: sm.cogs, kind: 'sub' },
+    { label: '− কুরিয়ার চার্জ', value: sm.courier, kind: 'sub' },
+    { label: '− COD কন্ডিশন চার্জ', value: sm.condition, kind: 'sub' },
+    { label: '− সেল-ভিত্তিক অন্যান্য খরচ', value: sm.otherCost, kind: 'sub' },
+    { label: '= সেলস লাভ', value: sm.salesProfit, kind: 'total' },
+    { label: '− Facebook বিজ্ঞাপন', value: sm.ads.Facebook, kind: 'sub' },
+    { label: '− TikTok বিজ্ঞাপন', value: sm.ads.TikTok, kind: 'sub' },
+    { label: '− অন্যান্য খরচ (প্যাকেজিং, রিটার্ন ইত্যাদি)', value: otherExp, kind: 'sub' },
+    { label: '= নেট লাভ', value: sm.netProfit, kind: 'final' },
+  ];
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <tbody className="divide-y divide-slate-100">
+          {lines.map(l => (
+            <tr key={l.label} className={cn(
+              l.kind === 'total' && 'bg-slate-50',
+              l.kind === 'final' && 'bg-emerald-900 text-white'
+            )}>
+              <td className={cn('py-2.5 pl-3', l.kind === 'final' ? 'font-bold' : l.kind === 'total' ? 'font-bold text-slate-900' : 'text-slate-600')}>{l.label}</td>
+              <td className={cn('py-2.5 text-right tabular-nums pr-3 font-semibold',
+                l.kind === 'sub' && 'text-rose-600', l.kind === 'final' && (l.value >= 0 ? 'text-emerald-300' : 'text-rose-300'),
+                l.kind === 'total' && 'text-emerald-700')}>{BDT(l.value)}</td>
+              <td className={cn('w-16 py-2.5 pr-3 text-right text-[11px]', l.kind === 'final' ? 'text-emerald-200' : 'text-slate-400')}>{pct(l.value, base)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
