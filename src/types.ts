@@ -71,6 +71,8 @@ export interface Sale {
   deliveryNote?: string;
   // Order fields (v2)
   invoice?: string;
+  // Steadfast-এ যে ইনভয়েস যাবে — আমাদের TGZ ইনভয়েস থেকে আলাদা
+  courierInvoice?: string;
   paymentMethod?: string;
   trxId?: string;
   customerDistrict?: string;

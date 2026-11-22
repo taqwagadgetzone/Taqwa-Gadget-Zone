@@ -56,6 +56,7 @@ type SaleForm = {
   address: string;
   district: string;
   invoice: string;
+  courierInvoice: string;
   lines: Line[];
   courierCharge: string;
   advance: string;
@@ -82,6 +83,7 @@ const emptyForm = (invoice: string): SaleForm => ({
   address: '',
   district: '',
   invoice,
+  courierInvoice: '',
   lines: [newLine()],
   courierCharge: '115',
   advance: '0',
@@ -298,6 +300,7 @@ export default function Sales() {
       address: s.customerAddress || '',
       district: s.courierArea || '',
       invoice: s.invoice || s.orderNumber || '',
+      courierInvoice: s.courierInvoice || '',
       lines,
       courierCharge: String(s.courierCharge ?? 0),
       advance: String(s.advanceAmount ?? 0),
@@ -354,6 +357,7 @@ export default function Sales() {
       customerAddress: form.address.trim() || undefined,
       customerChannel: form.channel || undefined,
       invoice: form.invoice || undefined,
+      courierInvoice: form.courierInvoice.trim() || undefined,
       advanceAmount: c.advance,
       codAmount: c.cod,
       paymentMethod: isCourier && c.advance > 0 ? form.paymentMethod || undefined : undefined,
@@ -392,13 +396,13 @@ export default function Sales() {
 
         // Steadfast-এ অটো বুকিং
         if (isCourier && form.bookSteadfast && !form.courierTrackingCode.trim()) {
-          if (!form.phone.trim() || !form.address.trim()) {
-            alert('সেল সেভ হয়েছে, কিন্তু Steadfast বুকিংয়ের জন্য ফোন ও ঠিকানা লাগবে। এডিট করে আবার চেষ্টা করুন।');
+          if (!form.phone.trim() || !form.address.trim() || !form.courierInvoice.trim()) {
+            alert('সেল সেভ হয়েছে, কিন্তু Steadfast বুকিংয়ের জন্য ফোন, ঠিকানা ও কুরিয়ার ইনভয়েস লাগবে। এডিট করে আবার চেষ্টা করুন।');
           } else {
             try {
               const address = [form.address.trim(), form.district.trim()].filter(Boolean).join(', ');
               const res = await createParcel({
-                invoice: form.invoice,
+                invoice: form.courierInvoice.trim(),
                 recipient_name: form.customerRef.trim() || 'Customer',
                 recipient_phone: form.phone.trim(),
                 recipient_address: address,
@@ -647,7 +651,7 @@ export default function Sales() {
               <input type="date" value={form.date} onChange={e => set('date', e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>ইনভয়েস নম্বর</label>
+              <label className={labelCls}>ইনভয়েস নম্বর (কুরিয়ারে যাবে না)</label>
               <input value={form.invoice} onChange={e => set('invoice', e.target.value)} className={cn(inputCls, 'font-mono')} />
             </div>
           </div>
@@ -831,6 +835,12 @@ export default function Sales() {
                   </label>
                 )}
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>কুরিয়ার ইনভয়েস</label>
+                    <input value={form.courierInvoice} onChange={e => set('courierInvoice', e.target.value)}
+                      placeholder="Steadfast-এ এই নম্বরটি যাবে" className={cn(inputCls, 'font-mono')} />
+                    <p className="mt-1 text-[11px] text-slate-500">ওপরের TGZ ইনভয়েস কুরিয়ারে যাবে না। কুরিয়ারের ইনভয়েস এখানে আলাদা করে লিখুন।</p>
+                  </div>
                   <div>
                     <label className={labelCls}>স্ট্যাটাস</label>
                     <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls}>
