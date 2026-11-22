@@ -456,6 +456,7 @@ export default function Sales() {
   return (
     <div className="pb-24 sm:pb-8">
       <PageHeader
+        theme="forest"
         title="সেলস ও কুরিয়ার"
         subtitle="অর্ডার, অগ্রিম, COD, Steadfast বুকিং ও ডেলিভারি স্ট্যাটাস"
         actions={

@@ -172,6 +172,7 @@ export default function Products() {
   return (
     <div className="pb-24 sm:pb-8">
       <PageHeader
+        theme="lime"
         title="প্রোডাক্ট ও স্টক"
         subtitle="কালারভিত্তিক স্টক, দাম ও বিক্রির হিসাব — বিক্রি হলে স্টক নিজে কমে"
         actions={<Button variant="accent" onClick={openAdd} className="w-full sm:w-auto">＋ নতুন প্রোডাক্ট</Button>}

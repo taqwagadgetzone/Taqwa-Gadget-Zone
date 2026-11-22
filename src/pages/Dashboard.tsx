@@ -66,6 +66,7 @@ export default function Dashboard() {
   return (
     <div className="pb-8">
       <PageHeader
+        theme="emerald"
         title={`${greeting()}, Taqwa Gadget Zone`}
         subtitle={`${periodLabel} — ব্যবসার এক নজরে`}
         actions={

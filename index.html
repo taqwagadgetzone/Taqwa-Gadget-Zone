@@ -9,7 +9,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-      html, body { font-family: 'Hind Siliguri', system-ui, -apple-system, 'Segoe UI', sans-serif; background: #f0f2f5; }
+      html, body {
+        font-family: 'Hind Siliguri', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        min-height: 100%;
+        background:
+          radial-gradient(1100px 520px at 0% -8%, #bbf7d0 0%, transparent 60%),
+          radial-gradient(900px 480px at 100% 4%, #a7f3d0 0%, transparent 55%),
+          linear-gradient(180deg, #ecfdf5 0%, #e4f6ec 45%, #d6efe0 100%);
+        background-attachment: fixed;
+      }
       .tabular-nums { font-variant-numeric: tabular-nums; }
       input[type=number]::-webkit-inner-spin-button { opacity: .4; }
     </style>

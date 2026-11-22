@@ -22,33 +22,57 @@ export const labelCls = 'mb-1.5 block text-xs font-semibold text-slate-600';
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('rounded-2xl border border-slate-200/80 bg-white shadow-sm', className)}>{children}</div>
-  );
-}
-
-export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
-  return (
     <div
-      className="mb-5 flex flex-col gap-4 rounded-2xl p-4 text-white shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5"
-      style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_2} 100%)` }}
+      className={cn(
+        'rounded-2xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(6,78,59,0.05),0_12px_28px_-16px_rgba(6,78,59,0.25)]',
+        className
+      )}
     >
-      <div className="min-w-0">
-        <h1 className="truncate text-lg font-bold sm:text-xl">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-xs text-emerald-200/80 sm:text-sm">{subtitle}</p>}
-      </div>
-      {actions && <div className="flex flex-wrap items-center gap-2 sm:gap-3">{actions}</div>}
+      {children}
     </div>
   );
 }
 
-type Tone = 'green' | 'red' | 'blue' | 'amber' | 'violet' | 'slate';
-const TONE: Record<Tone, { text: string; bg: string; ring: string }> = {
-  green:  { text: 'text-emerald-700', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
-  red:    { text: 'text-rose-700',    bg: 'bg-rose-50',    ring: 'ring-rose-100' },
-  blue:   { text: 'text-blue-700',    bg: 'bg-blue-50',    ring: 'ring-blue-100' },
-  amber:  { text: 'text-amber-700',   bg: 'bg-amber-50',   ring: 'ring-amber-100' },
-  violet: { text: 'text-violet-700',  bg: 'bg-violet-50',  ring: 'ring-violet-100' },
-  slate:  { text: 'text-slate-700',   bg: 'bg-slate-100',  ring: 'ring-slate-200' },
+// প্রতিটি পেজের নিজস্ব সবুজ শেড — একই ডিজাইন সিস্টেম, আলাদা অনুভূতি
+export type Theme = 'emerald' | 'forest' | 'lime' | 'sage' | 'jade';
+export const THEMES: Record<Theme, string> = {
+  emerald: 'linear-gradient(135deg, #064e3b 0%, #047857 55%, #059669 100%)',
+  forest:  'linear-gradient(135deg, #14532d 0%, #166534 55%, #15803d 100%)',
+  lime:    'linear-gradient(135deg, #365314 0%, #3f6212 55%, #4d7c0f 100%)',
+  sage:    'linear-gradient(135deg, #1f3d2b 0%, #2f5d44 55%, #4f7f63 100%)',
+  jade:    'linear-gradient(135deg, #022c22 0%, #065f46 55%, #0f766e 100%)',
+};
+
+export function PageHeader({
+  title, subtitle, actions, theme = 'emerald',
+}: { title: string; subtitle?: string; actions?: ReactNode; theme?: Theme }) {
+  return (
+    <div
+      className="relative mb-5 flex flex-col gap-4 overflow-hidden rounded-3xl p-4 text-white shadow-[0_20px_44px_-20px_rgba(6,78,59,0.6)] sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      style={{ background: THEMES[theme] }}
+    >
+      <div className="pointer-events-none absolute -right-14 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-lime-200/10 blur-3xl" />
+      <div className="relative min-w-0">
+        <h1 className="truncate text-lg font-bold tracking-tight sm:text-2xl">{title}</h1>
+        {subtitle && <p className="mt-1 text-xs text-white/75 sm:text-sm">{subtitle}</p>}
+      </div>
+      {actions && <div className="relative flex flex-wrap items-center gap-2 sm:gap-3">{actions}</div>}
+    </div>
+  );
+}
+
+type Tone = 'green' | 'red' | 'blue' | 'amber' | 'violet' | 'slate' | 'lime' | 'forest' | 'sage';
+const TONE: Record<Tone, { text: string; bg: string; ring: string; bar: string }> = {
+  green:  { text: 'text-emerald-700', bg: 'bg-emerald-50', ring: 'ring-emerald-100', bar: 'linear-gradient(90deg,#059669,#6ee7b7)' },
+  forest: { text: 'text-green-800',   bg: 'bg-green-50',   ring: 'ring-green-100',   bar: 'linear-gradient(90deg,#15803d,#86efac)' },
+  lime:   { text: 'text-lime-800',    bg: 'bg-lime-50',    ring: 'ring-lime-100',    bar: 'linear-gradient(90deg,#4d7c0f,#bef264)' },
+  sage:   { text: 'text-[#2f5d44]',   bg: 'bg-emerald-50/70', ring: 'ring-emerald-100', bar: 'linear-gradient(90deg,#2f5d44,#9ac9ac)' },
+  red:    { text: 'text-rose-700',    bg: 'bg-rose-50',    ring: 'ring-rose-100',    bar: 'linear-gradient(90deg,#e11d48,#fda4af)' },
+  blue:   { text: 'text-blue-700',    bg: 'bg-blue-50',    ring: 'ring-blue-100',    bar: 'linear-gradient(90deg,#2563eb,#93c5fd)' },
+  amber:  { text: 'text-amber-700',   bg: 'bg-amber-50',   ring: 'ring-amber-100',   bar: 'linear-gradient(90deg,#d97706,#fcd34d)' },
+  violet: { text: 'text-violet-700',  bg: 'bg-violet-50',  ring: 'ring-violet-100',  bar: 'linear-gradient(90deg,#7c3aed,#c4b5fd)' },
+  slate:  { text: 'text-slate-700',   bg: 'bg-slate-100',  ring: 'ring-slate-200',   bar: 'linear-gradient(90deg,#64748b,#cbd5e1)' },
 };
 
 export function StatCard({
@@ -56,7 +80,8 @@ export function StatCard({
 }: { label: string; value: string; sub?: string; tone?: Tone; icon?: ReactNode }) {
   const t = TONE[tone];
   return (
-    <Card className="p-4">
+    <Card className="relative overflow-hidden p-4">
+      <div className="absolute inset-x-0 top-0 h-1" style={{ background: t.bar }} />
       <div className="flex items-start justify-between gap-2">
         <span className="text-xs font-medium text-slate-500">{label}</span>
         {icon && (
@@ -81,7 +106,9 @@ export function Badge({ tone = 'slate', children, className }: { tone?: Tone; ch
 export function Chip({
   active, onClick, children, tone = 'green',
 }: { active?: boolean; onClick?: () => void; children: ReactNode; tone?: Tone }) {
-  const activeCls = tone === 'red' ? 'bg-rose-600 text-white border-rose-600' : 'bg-emerald-800 text-white border-emerald-800';
+  const activeCls = tone === 'red'
+    ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+    : 'bg-gradient-to-r from-emerald-800 to-emerald-600 text-white border-emerald-700 shadow-sm shadow-emerald-900/20';
   return (
     <button
       type="button"
@@ -100,8 +127,8 @@ export function Button({
   variant = 'primary', className, children, ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'accent' | 'ghost' | 'danger' | 'soft' }) {
   const v = {
-    primary: 'bg-emerald-900 text-white hover:bg-emerald-800',
-    accent:  'bg-emerald-500 text-white hover:bg-emerald-600',
+    primary: 'bg-gradient-to-r from-emerald-900 to-emerald-700 text-white shadow-md shadow-emerald-900/25 hover:from-emerald-800 hover:to-emerald-600',
+    accent:  'bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-md shadow-emerald-600/25 hover:from-emerald-600 hover:to-lime-600',
     ghost:   'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50',
     danger:  'bg-rose-600 text-white hover:bg-rose-700',
     soft:    'bg-slate-100 text-slate-700 hover:bg-slate-200',

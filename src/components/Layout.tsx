@@ -19,9 +19,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div className="min-h-screen text-slate-900">
       {/* Top bar — মোবাইলে ছোট, ল্যাপটপে নেভিগেশন সহ */}
-      <header className="fixed inset-x-0 top-0 z-50 bg-[#1a3c2e] text-white shadow-md">
+      <header
+        className="fixed inset-x-0 top-0 z-50 border-b border-white/10 text-white shadow-[0_12px_30px_-14px_rgba(6,78,59,0.7)]"
+        style={{ background: 'linear-gradient(90deg,#052e21 0%,#0b4a35 50%,#14532d 100%)' }}
+      >
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-3 sm:px-4 md:h-16">
           <div className="flex shrink-0 items-center rounded-lg bg-white px-2 py-1 shadow-sm">
             <img src="/logo.png" alt="Taqwa Gadget Zone" className="h-8 w-auto md:h-10" />
@@ -65,7 +68,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom tabs — এক হাতে সহজে ব্যবহারের জন্য */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-emerald-100 bg-white/95 shadow-[0_-10px_30px_-16px_rgba(6,78,59,0.4)] backdrop-blur md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="mx-auto grid max-w-md grid-cols-5">

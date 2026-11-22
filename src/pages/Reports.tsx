@@ -83,6 +83,7 @@ export default function Reports() {
   return (
     <div className="pb-8">
       <PageHeader
+        theme="jade"
         title="রিপোর্ট ও লাভ-ক্ষতি"
         subtitle={`${label} — বিক্রি, খরচ, চ্যানেল লাভ ও নগদ হিসাব`}
         actions={

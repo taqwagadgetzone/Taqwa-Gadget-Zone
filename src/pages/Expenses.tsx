@@ -247,6 +247,7 @@ export default function Expenses() {
   return (
     <div className="pb-24 sm:pb-8">
       <PageHeader
+        theme="sage"
         title="খরচ ব্যবস্থাপনা"
         subtitle="বিজ্ঞাপন, প্যাকেজিং, রিটার্ন ও অন্যান্য খরচ — মডেল ও ক্যাটাগরি অনুযায়ী"
         actions={
