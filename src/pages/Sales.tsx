@@ -230,12 +230,25 @@ export default function Sales() {
     setLine(id, patch);
   };
 
+  // নির্বাচিত প্রোডাক্টের নিজের রঙ; প্রোডাক্ট না মিললে সব রঙ (নতুন প্রোডাক্টের জন্য)
+  const colorsFor = (model: string): string[] => {
+    const p = productIndex.get(model.trim().toLowerCase());
+    return p ? (p.colors || []) : allColors;
+  };
+
   // ক্যাটাগরি বদলালে ওই ক্যাটাগরির প্রোডাক্টের তালিকা; ক্যাটাগরি না থাকলে সব প্রোডাক্ট
   const modelsFor = (category: string) => {
     const cat = category.trim().toLowerCase();
     const list = cat ? products.filter(p => (p.category || '').trim().toLowerCase() === cat) : products;
     return list;
   };
+
+  // এই নম্বরের আগের সব অর্ডার (এখন এডিট হচ্ছেটা বাদে), নতুন আগে
+  const phoneHistory = useMemo(() => {
+    const d = digitsOnly(form.phone);
+    if (d.length !== 11 || !isPhone(form.phone)) return [] as Sale[];
+    return sales.filter(s => s.id !== editId && digitsOnly(s.customerPhone || '') === d);
+  }, [sales, form.phone, editId]);
 
   // ফোন নম্বর মিললে আগের সবচেয়ে নতুন অর্ডারের ঠিকানা, জেলা ও নাম বসে (খালি ঘর ছাড়া কিছু বদলায় না)
   const onPhoneChange = (value: string) => {
@@ -551,11 +564,11 @@ export default function Sales() {
             action={<Button variant="primary" onClick={openAdd}>＋ নতুন সেল এন্ট্রি</Button>} />
         </Card>
       ) : (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden bg-gradient-to-b from-white to-emerald-50/50">
           {/* Desktop table */}
           <div className="hidden overflow-x-auto xl:block">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
+              <thead className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 text-left text-[11px] font-semibold uppercase tracking-wide text-emerald-50">
                 <tr>
                   <th className="px-4 py-3">ইনভয়েস / তারিখ</th>
                   <th className="px-4 py-3">কাস্টমার</th>
@@ -567,7 +580,7 @@ export default function Sales() {
                   <th className="px-4 py-3 text-center">অ্যাকশন</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-emerald-100/70">
                 {filtered.map(s => <SaleRowDesktop key={s.id} s={s} busy={busyId === s.id}
                   onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} />)}
               </tbody>
@@ -575,12 +588,12 @@ export default function Sales() {
           </div>
 
           {/* Tablet & mobile cards */}
-          <ul className="divide-y divide-slate-100 xl:hidden">
+          <ul className="divide-y divide-emerald-100/70 xl:hidden">
             {filtered.map(s => <SaleCard key={s.id} s={s} busy={busyId === s.id}
               onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} />)}
           </ul>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-50/60 px-4 py-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-100 bg-gradient-to-r from-emerald-100/70 via-lime-50 to-emerald-50 px-4 py-3 text-sm">
             <span className="font-bold text-emerald-900">মোট {filtered.length}টি · ডেলিভারি {totals.delivered}টি</span>
             <span className="font-bold tabular-nums text-emerald-700">লাভ {BDT(totals.profit)}</span>
           </div>
@@ -659,7 +672,22 @@ export default function Sales() {
                 <input type="tel" inputMode="tel" value={form.phone} onChange={e => onPhoneChange(e.target.value)}
                   placeholder="01XXXXXXXXX" className={cn(inputCls, form.phone && !isPhone(form.phone) && 'border-rose-400')} />
                 {form.phone && !isPhone(form.phone) && <p className="mt-1 text-[11px] text-rose-600">১১ ডিজিট হতে হবে</p>}
-                {autoFilled && isPhone(form.phone) && <p className="mt-1 text-[11px] text-emerald-700">✓ আগের অর্ডার থেকে ঠিকানা বসানো হয়েছে</p>}
+                {phoneHistory.length > 0 && (
+                  <div className="mt-2 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-lime-50 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold text-emerald-900">✓ এই নম্বরে আগের অর্ডার: {phoneHistory.length} টি</span>
+                      {autoFilled && <span className="text-[11px] text-emerald-700">ঠিকানা বসানো হয়েছে</span>}
+                    </div>
+                    <div className="space-y-1.5">
+                      {phoneHistory.slice(0, 3).map(s => (
+                        <div key={s.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/80 px-2.5 py-1.5 text-[11px] ring-1 ring-emerald-100">
+                          <span className="min-w-0 truncate text-slate-600">{s.date} · {s.model || '—'}</span>
+                          <span className="shrink-0 font-semibold tabular-nums text-emerald-800">{BDT(s.salesAmount || 0)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <label className={labelCls}>ডেলিভারি ঠিকানা</label>
@@ -677,23 +705,21 @@ export default function Sales() {
           {/* Items */}
           <Section title="📦 প্রোডাক্ট" tone="green"
             right={<Button variant="ghost" className="!py-1.5 !text-xs" onClick={() => set('lines', [...form.lines, newLine()])}>＋ আরেকটি প্রোডাক্ট</Button>}>
-            <datalist id="sale-cats">
-              {categories.map(c => <option key={c} value={c} />)}
-            </datalist>
-            <datalist id="sale-colors">
-              {allColors.map(col => <option key={col} value={col} />)}
-            </datalist>
             <div className="space-y-3">
               {c.lines.map((l, i) => (
                 <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-3">
-                  <datalist id={`sale-models-${l.id}`}>
-                    {modelsFor(l.category).map(p => <option key={p.id} value={p.model || p.name} />)}
-                  </datalist>
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="shrink-0 text-[11px] font-semibold text-slate-500">আইটেম #{i + 1}</span>
-                    <input list="sale-cats" value={l.category} placeholder="ক্যাটাগরি (যেমন: Smart Watch)"
-                      onChange={e => setLine(l.id, { category: e.target.value })}
-                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:border-emerald-600 focus:outline-none" />
+                    <div className="min-w-0 flex-1">
+                      <Suggest
+                        value={l.category}
+                        placeholder="ক্যাটাগরি (যেমন: Smart Watch)"
+                        className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:border-emerald-600 focus:outline-none"
+                        options={categories.map(cat => ({ label: cat }))}
+                        onType={v => setLine(l.id, { category: v })}
+                        onPick={v => setLine(l.id, { category: v })}
+                      />
+                    </div>
                     {form.lines.length > 1 && (
                       <button type="button" className="text-xs text-rose-600"
                         onClick={() => set('lines', form.lines.filter(x => x.id !== l.id))}>মুছুন</button>
@@ -701,12 +727,24 @@ export default function Sales() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-12">
                     <div className="col-span-2 sm:col-span-4">
-                      <input list={`sale-models-${l.id}`} value={l.model} placeholder="মডেল / প্রোডাক্ট"
-                        onChange={e => pickModel(l.id, e.target.value)} className={inputCls} />
+                      <Suggest
+                        value={l.model}
+                        placeholder="মডেল / প্রোডাক্ট"
+                        className={inputCls}
+                        options={modelsFor(l.category).map(p => ({ label: p.model || p.name, sub: p.category || undefined }))}
+                        onType={v => pickModel(l.id, v)}
+                        onPick={v => pickModel(l.id, v)}
+                      />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
-                      <input list="sale-colors" value={l.color} placeholder="কালার"
-                        onChange={e => setLine(l.id, { color: e.target.value })} className={inputCls} />
+                      <Suggest
+                        value={l.color}
+                        placeholder="কালার"
+                        className={inputCls}
+                        options={colorsFor(l.model).map(col => ({ label: col }))}
+                        onType={v => setLine(l.id, { color: v })}
+                        onPick={v => setLine(l.id, { color: v })}
+                      />
                     </div>
                     <div className="col-span-1 sm:col-span-2">
                       <input type="number" inputMode="numeric" min={1} value={l.qty} placeholder="পরিমাণ"
@@ -829,14 +867,62 @@ export default function Sales() {
 }
 
 // ---------- small pieces ----------
+type SuggestOption = { label: string; sub?: string };
+
+// নিজস্ব সাজেশন বক্স — ঘরে লেখা থাকলেও পুরো তালিকা দেখায়, তাই আগের লেখা মুছতে হয় না
+function Suggest({
+  value, options, onType, onPick, placeholder, className,
+}: {
+  value: string; options: SuggestOption[]; onType: (v: string) => void; onPick: (v: string) => void;
+  placeholder?: string; className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const q = value.trim().toLowerCase();
+  const exact = !!q && options.some(o => o.label.toLowerCase() === q);
+  const shown = !q || exact ? options : options.filter(o => o.label.toLowerCase().includes(q));
+  return (
+    <div className="relative">
+      <input
+        value={value}
+        placeholder={placeholder}
+        className={className}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onChange={e => { onType(e.target.value); setOpen(true); }}
+      />
+      {open && shown.length > 0 && (
+        <div className="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-auto rounded-xl border border-emerald-100 bg-white p-1 shadow-xl shadow-emerald-900/10">
+          {shown.slice(0, 60).map((o, idx) => (
+            <button
+              type="button"
+              key={`${o.label}-${idx}`}
+              onMouseDown={e => { e.preventDefault(); onPick(o.label); setOpen(false); }}
+              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-900"
+            >
+              <span className="truncate">{o.label}</span>
+              {o.sub && <span className="shrink-0 text-[11px] text-slate-400">{o.sub}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Section({
   title, tone, children, right,
 }: { title: string; tone: 'blue' | 'green' | 'amber' | 'violet' | 'slate'; children: React.ReactNode; right?: React.ReactNode }) {
-  const bg = { blue: 'bg-blue-50/50 border-blue-100', green: 'bg-emerald-50/50 border-emerald-100', amber: 'bg-amber-50/50 border-amber-100', violet: 'bg-violet-50/50 border-violet-100', slate: 'bg-slate-50 border-slate-200' }[tone];
+  const bg = {
+    blue: 'bg-gradient-to-br from-blue-50 via-white to-sky-50 border-blue-100',
+    green: 'bg-gradient-to-br from-emerald-50 via-white to-lime-50 border-emerald-100',
+    amber: 'bg-gradient-to-br from-amber-50 via-white to-orange-50 border-amber-100',
+    violet: 'bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 border-violet-100',
+    slate: 'bg-gradient-to-br from-slate-50 to-white border-slate-200',
+  }[tone];
   return (
-    <div className={cn('rounded-2xl border p-4', bg)}>
+    <div className={cn('rounded-2xl border p-4 shadow-sm', bg)}>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-slate-700">{title}</span>
+        <span className="text-xs font-bold tracking-tight text-slate-800">{title}</span>
         {right}
       </div>
       {children}
@@ -895,7 +981,7 @@ function SaleRowDesktop(p: RowProps) {
   const { s, busy, onStatus } = p;
   const isCourier = s.saleType === 'Courier Sale';
   return (
-    <tr className="align-top hover:bg-slate-50/70">
+    <tr className="align-top transition hover:bg-emerald-50/80">
       <td className="px-4 py-3">
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
         <div className="text-[11px] tabular-nums text-slate-400">{s.date}</div>
@@ -940,7 +1026,7 @@ function SaleCard(p: RowProps) {
   const { s, busy, onStatus } = p;
   const isCourier = s.saleType === 'Courier Sale';
   return (
-    <li className="px-4 py-3.5">
+    <li className="px-4 py-3.5 transition hover:bg-emerald-50/60">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
