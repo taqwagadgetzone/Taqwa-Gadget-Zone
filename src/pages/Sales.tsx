@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Sale, Product } from '../types';
-import { createParcel, getStatusByCid, getBalance } from '../services/steadfast';
+import { createParcel, getBalance } from '../services/steadfast';
 import { applyStock, resolveItems, shouldDeduct } from '../services/stock';
+import { fetchCourierStatus, isTrackable, saveCourierStatus, syncCourierStatuses } from '../services/courierSync';
 import { summarize } from '../services/accounting';
 import {
   BDT, cn, inputCls, labelCls, Card, PageHeader, StatCard, Badge, Chip, Button,
@@ -19,6 +20,13 @@ const STATUS_CONFIG: Record<string, { label: string; tone: 'amber' | 'blue' | 'r
   delivered:                  { label: 'ডেলিভারি হয়েছে',    tone: 'green' },
   cancelled:                  { label: 'বাতিল',              tone: 'red' },
   hold:                       { label: 'হোল্ড',              tone: 'slate' },
+  processing:                 { label: 'প্রসেসিং',           tone: 'blue' },
+  picked_up:                  { label: 'পিকআপ হয়েছে',       tone: 'blue' },
+  in_transit:                 { label: 'পথে আছে',            tone: 'violet' },
+  returned_to_courier:        { label: 'কুরিয়ারে ফেরত',     tone: 'red' },
+  returned_to_merchant:       { label: 'ফেরত এসেছে',         tone: 'red' },
+  partial_returned_to_merchant: { label: 'আংশিক ফেরত',       tone: 'red' },
+  unknown:                    { label: 'অজানা',              tone: 'slate' },
 };
 
 const CHANNELS = ['Facebook', 'TikTok', 'Call', 'WhatsApp', 'Other'];
@@ -126,18 +134,19 @@ export default function Sales() {
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = async () => {
-    const [sSnap, pSnap] = await Promise.all([getDocs(collection(db, 'sales')), getDocs(collection(db, 'products'))]);
-    const data = sSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Sale[];
-    data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    setSales(data);
-    setProducts(pSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Product[]);
-    setLoading(false);
-  };
-
+  // লাইভ ডেটা — সেল বা প্রোডাক্ট বদলালে (সেভ, স্ট্যাটাস, কুরিয়ার সিঙ্ক) সাথে সাথে স্ক্রিনে আসে
   useEffect(() => {
-    load();
+    const unsubS = onSnapshot(collection(db, 'sales'), snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Sale[];
+      data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setSales(data);
+      setLoading(false);
+    });
+    const unsubP = onSnapshot(collection(db, 'products'), snap => {
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Product[]);
+    });
     getBalance().then(r => setBalance(r.current_balance)).catch(() => setBalance(null));
+    return () => { unsubS(); unsubP(); };
   }, []);
 
   // পরের ইনভয়েস নম্বর — TGZ-১০০১, ১০০২ ...
@@ -365,7 +374,6 @@ export default function Sales() {
           }
         }
       }
-      await load();
       setOpen(false);
       if (stockWarnings.length) alert('⚠️ ' + stockWarnings.join('\n'));
     } catch (err) {
@@ -392,7 +400,6 @@ export default function Sales() {
         await applyStock(resolveItems(s.items || [], products), 1); // স্টক ফেরত
       }
       await deleteDoc(doc(db, 'sales', id));
-      await load();
     } catch (err) {
       alert('মুছতে সমস্যা: ' + String(err));
     }
@@ -414,21 +421,32 @@ export default function Sales() {
     setBusyId(null);
   };
 
+  // একটি সেলের স্ট্যাটাস Steadfast থেকে আনা (কনসাইনমেন্ট আইডি না থাকলে ট্র্যাকিং কোড দিয়ে)
   const syncStatus = async (s: Sale) => {
-    const cid = s.steadfastConsignmentId || s.courierTrackingId;
-    if (!cid) return alert('কোনো Steadfast Consignment ID নেই');
+    if (!isTrackable(s)) return alert('এই সেলে Steadfast আইডি বা ট্র্যাকিং কোড নেই');
     setBusyId(s.id);
     try {
-      const res = await getStatusByCid(cid);
-      const next = res.delivery_status || res.consignment?.status || 'unknown';
-      const { patch, warnings } = await stockForStatus(s, next);
-      await updateDoc(doc(db, 'sales', s.id), { courierDeliveryStatus: next, ...patch });
-      setSales(prev => prev.map(x => (x.id === s.id ? { ...x, courierDeliveryStatus: next, ...patch } : x)));
+      const next = await fetchCourierStatus(s);
+      const warnings = await saveCourierStatus(s, next, products);
       if (warnings.length) alert('⚠️ ' + warnings.join('\n'));
     } catch (err) {
       alert('স্ট্যাটাস আনতে সমস্যা: ' + String(err));
     }
     setBusyId(null);
+  };
+
+  // সব চলমান কুরিয়ার সেলের স্ট্যাটাস একসাথে আনা
+  const [syncingAll, setSyncingAll] = useState(false);
+  const syncAll = async () => {
+    setSyncingAll(true);
+    try {
+      const r = await syncCourierStatuses();
+      alert(`কুরিয়ার সিঙ্ক শেষ: ${r.checked}টি চেক, ${r.changed}টি আপডেট, ${r.failed}টি ব্যর্থ`);
+      if (r.warnings.length) alert('⚠️ ' + r.warnings.join('\n'));
+    } catch (err) {
+      alert('সিঙ্ক করতে সমস্যা: ' + String(err));
+    }
+    setSyncingAll(false);
   };
 
   if (loading) return <Spinner icon="🛵" text="সেলস লোড হচ্ছে..." />;
@@ -446,6 +464,9 @@ export default function Sales() {
               <span className="text-emerald-200">Steadfast ব্যালেন্স </span>
               <span className="font-bold tabular-nums">{balance === null ? '—' : BDT(balance)}</span>
             </div>
+            <Button variant="ghost" onClick={syncAll} disabled={syncingAll} className="w-full sm:w-auto">
+              {syncingAll ? 'সিঙ্ক হচ্ছে…' : '🔄 কুরিয়ার সিঙ্ক'}
+            </Button>
             <Button variant="accent" onClick={openAdd} className="w-full sm:w-auto">＋ নতুন সেল</Button>
           </>
         }
@@ -814,7 +835,7 @@ interface RowProps {
 }
 
 function Actions({ s, busy, onEdit, onDelete, onSync }: RowProps) {
-  const canSync = s.saleType === 'Courier Sale' && !!(s.steadfastConsignmentId || s.courierTrackingId);
+  const canSync = isTrackable(s);
   return (
     <div className="flex items-center gap-1.5">
       <IconButton tone="blue" title="এডিট" onClick={() => onEdit(s)}>✏️</IconButton>

@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import { useCourierAutoSync } from './hooks/useCourierAutoSync';
 
 // Lazy load — শুধু দরকারের সময় লোড হবে
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -26,6 +27,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  useCourierAutoSync(!!user); // লগইন থাকলে কুরিয়ার স্ট্যাটাস নিজে থেকে আপডেট হয়
   if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">লোড হচ্ছে...</div>;
 
   return (

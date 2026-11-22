@@ -58,7 +58,10 @@ export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   'picked_up': 'পিক আপ হয়েছে',
   'in_transit': 'ট্রানজিটে',
   'delivered': 'ডেলিভারি হয়েছে',
+  'delivered_approval_pending': 'ডেলিভারি অপেক্ষায়',
   'partial_delivered': 'আংশিক ডেলিভারি',
+  'partial_delivered_approval_pending': 'আংশিক ডেলিভারি অপেক্ষায়',
+  'unknown_approval_pending': 'অনুমোদন অপেক্ষায়',
   'cancelled': 'বাতিল',
   'hold': 'হোল্ড',
   'returned_to_courier': 'কুরিয়ারে ফেরত',
@@ -115,6 +118,20 @@ export async function getStatusByCid(
   consignmentId: number | string
 ): Promise<SteadfastStatusResponse> {
   const response = await proxyFetch(`action=status&cid=${encodeURIComponent(String(consignmentId))}`);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Steadfast Status Error ${response.status}: ${text}`);
+  }
+  return response.json();
+}
+
+/**
+ * Get delivery status by tracking code (ট্র্যাকিং কোড আছে কিন্তু কনসাইনমেন্ট আইডি নেই এমন সেলের জন্য)
+ */
+export async function getStatusByTrackingCode(
+  trackingCode: string
+): Promise<SteadfastStatusResponse> {
+  const response = await proxyFetch(`action=status_tc&tc=${encodeURIComponent(trackingCode)}`);
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Steadfast Status Error ${response.status}: ${text}`);

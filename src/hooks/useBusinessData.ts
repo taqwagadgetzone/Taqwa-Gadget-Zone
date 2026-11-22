@@ -1,6 +1,6 @@
-// সেলস, খরচ ও প্রোডাক্ট একসাথে লোড — ড্যাশবোর্ড ও রিপোর্ট একই ডেটা ব্যবহার করে
-import { useCallback, useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+// সেলস, খরচ ও প্রোডাক্ট — লাইভ (onSnapshot)। কোনো পেজে বা অন্য ডিভাইসে বদল হলে সাথে সাথে দেখা যায়।
+import { useEffect, useState } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Expense, Product, Sale } from '../types';
 
@@ -11,28 +11,30 @@ export function useBusinessData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
-    try {
-      const [s, e, p] = await Promise.all([
-        getDocs(collection(db, 'sales')),
-        getDocs(collection(db, 'expenses')),
-        getDocs(collection(db, 'products')),
-      ]);
-      const sl = s.docs.map(d => ({ id: d.id, ...d.data() })) as Sale[];
-      sl.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      const ex = e.docs.map(d => ({ id: d.id, ...d.data() })) as Expense[];
-      ex.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      setSales(sl);
-      setExpenses(ex);
-      setProducts(p.docs.map(d => ({ id: d.id, ...d.data() })) as Product[]);
+  useEffect(() => {
+    const byTime = <T extends { timestamp?: number }>(docs: { id: string; data: () => object }[]) =>
+      docs
+        .map(d => ({ id: d.id, ...d.data() }) as unknown as T)
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    const fail = (err: unknown) => { setError(String(err)); setLoading(false); };
+
+    const unsubS = onSnapshot(collection(db, 'sales'), snap => {
+      setSales(byTime<Sale>(snap.docs));
       setError(null);
-    } catch (err) {
-      setError(String(err));
-    }
-    setLoading(false);
+      setLoading(false);
+    }, fail);
+    const unsubE = onSnapshot(collection(db, 'expenses'), snap => {
+      setExpenses(byTime<Expense>(snap.docs));
+    }, fail);
+    const unsubP = onSnapshot(collection(db, 'products'), snap => {
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Product));
+    }, fail);
+
+    return () => { unsubS(); unsubE(); unsubP(); };
   }, []);
 
-  useEffect(() => { reload(); }, [reload]);
+  // আগের API বজায় রাখা — লাইভ হওয়ায় এখন আর আলাদা রিলোড দরকার নেই
+  const reload = async () => {};
 
   return { sales, expenses, products, loading, error, reload };
 }

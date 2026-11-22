@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useBusinessData } from '../hooks/useBusinessData';
 import {
   summarize, byChannel, dailySeries, datesOf, inRange, expenseByCategory, topProducts,
-  courierStatusCounts, isCourier, shiftMonth, downloadCSV, saleCost, saleProfit,
+  courierStatusCounts, isCourier, shiftMonth, downloadCSV, saleCost, saleProfit, productPnL,
   AD_CATEGORIES, CHANNELS, type Range, type Channel,
 } from '../services/accounting';
 import {
@@ -38,6 +38,7 @@ export default function Reports() {
   const dayMax = Math.max(1, ...days.map(d => d.sales));
   const cats = useMemo(() => expenseByCategory(expR), [expR]);
   const top = useMemo(() => topProducts(salesR, 10), [salesR]);
+  const pnl = useMemo(() => productPnL(salesR, expR, products), [salesR, expR, products]);
   const courier = useMemo(() => courierStatusCounts(salesR), [salesR]);
 
   // আগের মাসের তুলনা (শুধু মাস ভিউতে)
@@ -217,6 +218,70 @@ export default function Reports() {
           </div>
         )}
         {products.length > 0 && <div className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">স্টক ভ্যালু (বর্তমান): {BDT(products.reduce((s, p) => s + (p.stockValue || 0), 0))}</div>}
+      </Card>
+
+      {/* প্রোডাক্ট-ভিত্তিক লাভ-ক্ষতি — কোন প্রোডাক্টে কত খরচ, কত লাভ */}
+      <Card className="mb-5 overflow-hidden">
+        <div className="border-b border-slate-100 px-4 py-3">
+          <h2 className="text-sm font-bold text-slate-800">প্রোডাক্ট অনুযায়ী লাভ-ক্ষতি</h2>
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            সেলস লাভে কুরিয়ার, COD ও অন্যান্য সেল খরচ বাদ দেওয়া। প্রোডাক্টের নামে যুক্ত খরচ সেই প্রোডাক্টে যায়।
+          </p>
+        </div>
+        {pnl.rows.length === 0 && pnl.unassignedExpenses === 0 ? (
+          <Empty icon="📊" text="এই সময়ে প্রোডাক্টের হিসাব নেই" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500">
+                <tr>
+                  <th className="px-4 py-2.5">প্রোডাক্ট</th>
+                  <th className="px-4 py-2.5 text-right">পিস</th>
+                  <th className="px-4 py-2.5 text-right">বিক্রয়</th>
+                  <th className="px-4 py-2.5 text-right">ক্রয়মূল্য</th>
+                  <th className="px-4 py-2.5 text-right">সেলস লাভ</th>
+                  <th className="px-4 py-2.5 text-right">খরচ</th>
+                  <th className="px-4 py-2.5 text-right">নেট লাভ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {pnl.rows.map(r => (
+                  <tr key={r.name} className="hover:bg-slate-50/70">
+                    <td className="px-4 py-2.5 font-medium text-slate-900">{r.name}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{r.pieces || '—'}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{r.revenue ? BDT(r.revenue) : '—'}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{r.cogs ? BDT(r.cogs) : '—'}</td>
+                    <td className={cn('px-4 py-2.5 text-right tabular-nums', r.salesProfit >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.salesProfit)}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-rose-600">{r.expenses ? BDT(r.expenses) : '—'}</td>
+                    <td className={cn('px-4 py-2.5 text-right font-semibold tabular-nums', r.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.net)}</td>
+                  </tr>
+                ))}
+                {pnl.unassignedExpenses > 0 && (
+                  <tr className="bg-amber-50/60">
+                    <td className="px-4 py-2.5 font-medium text-amber-800">অন্য খরচ (প্রোডাক্টে বসানো নেই)</td>
+                    <td className="px-4 py-2.5 text-right text-slate-400">—</td>
+                    <td className="px-4 py-2.5 text-right text-slate-400">—</td>
+                    <td className="px-4 py-2.5 text-right text-slate-400">—</td>
+                    <td className="px-4 py-2.5 text-right text-slate-400">—</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-rose-600">{BDT(pnl.unassignedExpenses)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-rose-600">{BDT(-pnl.unassignedExpenses)}</td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot className="border-t-2 border-slate-200 bg-slate-50 text-sm font-bold">
+                <tr>
+                  <td className="px-4 py-3">মোট</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{pnl.total.pieces}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{BDT(pnl.total.revenue)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{BDT(pnl.total.cogs)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{BDT(pnl.total.salesProfit)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-rose-600">{BDT(pnl.total.expenses)}</td>
+                  <td className={cn('px-4 py-3 text-right tabular-nums', pnl.total.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(pnl.total.net)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
       </Card>
 
       {/* Daily */}

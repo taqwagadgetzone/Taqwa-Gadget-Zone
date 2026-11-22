@@ -171,6 +171,99 @@ export function topProducts(sales: Sale[], limit = 10): ProductRow[] {
   return Array.from(m.values()).sort((a, b) => b.qty - a.qty || b.profit - a.profit).slice(0, limit);
 }
 
+// ---------- Product P&L (মাস শেষে প্রোডাক্ট-ভিত্তিক হিসাব) ----------
+// সেলস লাভ = আইটেমের (বিক্রয় − ক্রয়) + সেলের বাকি সমন্বয় (কুরিয়ার, COD, অন্যান্য খরচ; ডেলিভারি আয় যোগ)।
+// বাকি সমন্বয় আইটেমের বিক্রয়মূল্য অনুপাতে ভাগ হয়, তাই সব প্রোডাক্টের সেলস লাভের যোগফল = মোট সেলস লাভ।
+// প্রোডাক্টের নামে (targetModel) যুক্ত খরচ সেই প্রোডাক্টে যায়; বাকি খরচ "অন্য খরচ" হিসেবে আলাদা থাকে।
+export interface ProductPnLRow {
+  name: string;
+  pieces: number;
+  revenue: number;      // বিক্রয়মূল্য
+  cogs: number;         // ক্রয়মূল্য
+  saleAdjust: number;   // কুরিয়ার/COD/অন্যান্য খরচ বাদ, ডেলিভারি আয় যোগ (ঋণাত্মক হলে খরচ বেশি)
+  salesProfit: number;  // সেলস লাভ
+  expenses: number;     // প্রোডাক্টের নামে যুক্ত খরচ (বিজ্ঞাপন, প্যাকেজিং ইত্যাদি)
+  net: number;          // নেট লাভ = সেলস লাভ − খরচ
+}
+
+export interface ProductPnL {
+  rows: ProductPnLRow[];
+  unassignedExpenses: number;  // কোনো প্রোডাক্টের সাথে মেলেনি বা মডেল ছাড়া খরচ
+  total: ProductPnLRow;        // সব মিলিয়ে (খরচে অন্য খরচ যুক্ত)
+}
+
+export function productPnL(sales: Sale[], expenses: Expense[], products: Product[]): ProductPnL {
+  const keyOf = (name: string) => name.trim().toLowerCase();
+  const blank = (name: string): ProductPnLRow => ({
+    name, pieces: 0, revenue: 0, cogs: 0, saleAdjust: 0, salesProfit: 0, expenses: 0, net: 0,
+  });
+  const rows = new Map<string, ProductPnLRow>();
+  const rowFor = (name: string) => {
+    const k = keyOf(name);
+    let r = rows.get(k);
+    if (!r) { r = blank(name.trim()); rows.set(k, r); }
+    return r;
+  };
+  // প্রোডাক্ট লিস্ট আগে বসানো — বিক্রি বা খরচ না থাকলেও সারি থাকবে
+  products.forEach(p => rowFor((p.model || p.name || '').trim() || '—'));
+
+  sales.filter(s => !isLost(s)).forEach(s => {
+    const items: Partial<SaleItem>[] = s.items?.length ? s.items : [{
+      model: s.model, productName: s.model, quantity: s.quantity || 1,
+      sellingPrice: s.sellingPrice, purchasePrice: s.purchasePrice,
+    }];
+    const lines = items.map(it => {
+      const qty = it.quantity || 1;
+      return {
+        name: (it.model || it.productName || '—').trim(),
+        qty,
+        revenue: it.totalSelling ?? n(it.sellingPrice) * qty,
+        cost: it.totalPurchase ?? n(it.purchasePrice) * qty,
+      };
+    });
+    const lineRevenue = sum(lines, l => l.revenue);
+    const lineGross = sum(lines, l => l.revenue - l.cost);
+    const rest = saleProfit(s) - lineGross; // সেলের বাকি সমন্বয়
+    lines.forEach(l => {
+      const share = lineRevenue > 0 ? l.revenue / lineRevenue : 1 / lines.length;
+      const r = rowFor(l.name);
+      r.pieces += l.qty;
+      r.revenue += l.revenue;
+      r.cogs += l.cost;
+      r.saleAdjust += rest * share;
+    });
+  });
+
+  let unassigned = 0;
+  expenses.forEach(e => {
+    const r = rows.get(keyOf(e.targetModel || ''));
+    if (r) r.expenses += n(e.amount);
+    else unassigned += n(e.amount);
+  });
+
+  const list = Array.from(rows.values())
+    .filter(r => r.pieces > 0 || r.revenue > 0 || r.expenses > 0)
+    .map(r => {
+      const salesProfit = r.revenue - r.cogs + r.saleAdjust;
+      return { ...r, salesProfit, net: salesProfit - r.expenses };
+    })
+    .sort((a, b) => b.net - a.net);
+
+  const total = blank('মোট');
+  list.forEach(r => {
+    total.pieces += r.pieces;
+    total.revenue += r.revenue;
+    total.cogs += r.cogs;
+    total.saleAdjust += r.saleAdjust;
+    total.salesProfit += r.salesProfit;
+    total.expenses += r.expenses;
+  });
+  total.expenses += unassigned;
+  total.net = total.salesProfit - total.expenses;
+
+  return { rows: list, unassignedExpenses: unassigned, total };
+}
+
 export function courierStatusCounts(sales: Sale[]): Record<string, number> {
   const m: Record<string, number> = {};
   sales.filter(isCourier).forEach(s => { const k = s.courierDeliveryStatus || 'pending'; m[k] = (m[k] || 0) + 1; });

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Expense } from '../types';
+import type { Expense, Product } from '../types';
 import {
   BDT, USD, cn, inputCls, labelCls, Card, PageHeader, StatCard, Badge, Chip,
   Button, IconButton, Modal, Empty, Spinner,
@@ -34,10 +34,36 @@ const num = (s: string) => {
 };
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+// প্রোডাক্টের নাম যেটা খরচের "মডেল" হিসেবে সেভ হয় (সেলস ও রিপোর্টের সাথে মেলে)
+const productKey = (p: Product) => (p.model || p.name || '').trim();
+
+// বিবরণের ভেতরে প্রোডাক্টের মডেল/নাম খুঁজে বের করে — লম্বা নাম আগে, শব্দের সীমানা মিলিয়ে
+function matchProduct(text: string, products: Product[]): string | null {
+  const t = text.toLowerCase();
+  if (!t.trim()) return null;
+  const isWordChar = (ch: string | undefined) => !!ch && /[a-z0-9ঀ-৿]/i.test(ch);
+  const keys = products
+    .map(productKey)
+    .filter(k => k.length >= 2)
+    .sort((a, b) => b.length - a.length);
+  for (const key of keys) {
+    const k = key.toLowerCase();
+    let idx = t.indexOf(k);
+    while (idx !== -1) {
+      const before = t[idx - 1];
+      const after = t[idx + k.length];
+      if (!isWordChar(before) && !isWordChar(after)) return key;
+      idx = t.indexOf(k, idx + 1);
+    }
+  }
+  return null;
+}
+
 type ExpenseForm = {
   date: string;
   category: string;
   targetModel: string;
+  targetManual: boolean; // ইউজার নিজে মডেল বেছে বা লিখে থাকলে আর অটো বদলাবে না
   description: string;
   amount: string;      // টাকা (ডলার না হলে)
   dollarAmount: string;
@@ -48,6 +74,7 @@ const emptyForm = (rate: string): ExpenseForm => ({
   date: todayStr(),
   category: DEFAULT_CATEGORY,
   targetModel: '',
+  targetManual: false,
   description: '',
   amount: '',
   dollarAmount: '',
@@ -58,6 +85,7 @@ type Period = 'today' | 'month' | 'all';
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   // filters
@@ -75,14 +103,29 @@ export default function Expenses() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const load = async () => {
-    const snap = await getDocs(collection(db, 'expenses'));
-    const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Expense[];
-    data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    setExpenses(data);
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
+  // লাইভ ডেটা — খরচ ও প্রোডাক্ট বদলালে সাথে সাথে আপডেট
+  useEffect(() => {
+    const unsubE = onSnapshot(collection(db, 'expenses'), snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Expense[];
+      data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setExpenses(data);
+      setLoading(false);
+    });
+    const unsubP = onSnapshot(collection(db, 'products'), snap => {
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Product[]);
+    });
+    return () => { unsubE(); unsubP(); };
+  }, []);
+
+  // সবচেয়ে বেশি বিক্রিত প্রোডাক্ট — এক ট্যাপে মডেল বসানোর জন্য
+  const topProducts = useMemo(
+    () => [...products].sort((a, b) => (b.totalSold || 0) - (a.totalSold || 0)).slice(0, 8),
+    [products]
+  );
+  const productKeys = useMemo(
+    () => Array.from(new Set([...products.map(productKey), ...expenses.map(e => e.targetModel || '')].filter(Boolean))).sort(),
+    [products, expenses]
+  );
 
   // সবচেয়ে সাম্প্রতিক ডলার রেট — নতুন এন্ট্রিতে আগেই বসে থাকবে
   const lastRate = useMemo(() => {
@@ -150,6 +193,7 @@ export default function Expenses() {
       date: e.date || todayStr(),
       category: e.category || DEFAULT_CATEGORY,
       targetModel: e.targetModel || '',
+      targetManual: !!e.targetModel,
       description: e.description || '',
       amount: e.dollarAmount ? '' : String(e.amount || ''),
       dollarAmount: e.dollarAmount ? String(e.dollarAmount) : '',
@@ -171,14 +215,13 @@ export default function Expenses() {
       category: form.category,
       description: form.description.trim(),
       amount: computedAmount,
-      targetModel: form.targetModel.trim() || undefined,
+      targetModel: form.targetModel.trim() || matchProduct(form.description, products) || undefined,
       dollarAmount: dollarMode ? num(form.dollarAmount) : undefined,
       dollarRate: dollarMode ? num(form.dollarRate) : undefined,
     };
     try {
       if (editId) await updateDoc(doc(db, 'expenses', editId), payload as Record<string, unknown>);
       else await addDoc(collection(db, 'expenses'), payload);
-      await load();
       setOpen(false);
     } catch (err) {
       alert('সেভ করতে সমস্যা: ' + String(err));
@@ -191,7 +234,6 @@ export default function Expenses() {
     setDeleting(id);
     try {
       await deleteDoc(doc(db, 'expenses', id));
-      await load();
     } catch (err) {
       alert('মুছতে সমস্যা: ' + String(err));
     }
@@ -417,19 +459,43 @@ export default function Expenses() {
             <div>
               <label className={labelCls}>মডেল / প্রোডাক্ট</label>
               <input list="expense-models" value={form.targetModel}
-                onChange={e => setForm(f => ({ ...f, targetModel: e.target.value }))}
+                onChange={e => setForm(f => ({ ...f, targetModel: e.target.value, targetManual: true }))}
                 placeholder="যেমন: KW83 Max" className={inputCls} />
               <datalist id="expense-models">
-                {models.map(m => <option key={m} value={m} />)}
+                {productKeys.map(m => <option key={m} value={m} />)}
               </datalist>
+              {topProducts.length > 0 && (
+                <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
+                  {topProducts.map(p => {
+                    const k = productKey(p);
+                    return (
+                      <Chip key={p.id} active={form.targetModel === k}
+                        onClick={() => setForm(f => ({ ...f, targetModel: k, targetManual: true }))}>
+                        {k}
+                      </Chip>
+                    );
+                  })}
+                </div>
+              )}
+              {!form.targetManual && form.targetModel && (
+                <p className="mt-1 text-[11px] text-emerald-700">✓ বিবরণ থেকে অটো সিলেক্ট হয়েছে</p>
+              )}
             </div>
           </div>
 
           <div>
             <label className={labelCls}>বিবরণ</label>
             <input type="text" value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              placeholder="যেমন: Facebook Ads Dollar Payment" className={inputCls} />
+              onChange={e => {
+                const v = e.target.value;
+                setForm(f => {
+                  // ইউজার নিজে মডেল না বাছলে বিবরণ থেকে প্রোডাক্ট মিলিয়ে নেয়
+                  const m = f.targetManual ? null : matchProduct(v, products);
+                  return { ...f, description: v, ...(m ? { targetModel: m } : {}) };
+                });
+              }}
+              placeholder="যেমন: KW83 Max Facebook Ads" className={inputCls} />
+            <p className="mt-1 text-[11px] text-slate-500">বিবরণে প্রোডাক্টের নাম লিখলে মডেল নিজে থেকে বসে যাবে</p>
           </div>
 
           <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4">

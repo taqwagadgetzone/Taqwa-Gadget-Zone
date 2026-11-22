@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Product } from '../types';
 import { stockStatus } from '../services/stock';
@@ -67,14 +67,15 @@ export default function Products() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const load = async () => {
-    const snap = await getDocs(collection(db, 'products'));
-    const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Product[];
-    data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    setProducts(data);
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
+  // লাইভ ডেটা — বিক্রি বা স্টক বদলালে (সেলস, কুরিয়ার সিঙ্ক) সাথে সাথে সংখ্যা আপডেট হয়
+  useEffect(() => {
+    return onSnapshot(collection(db, 'products'), snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Product[];
+      data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setProducts(data);
+      setLoading(false);
+    });
+  }, []);
 
   const categories = useMemo(
     () => Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort(),
@@ -148,7 +149,6 @@ export default function Products() {
           openingStock: stock,
         });
       }
-      await load();
       setOpen(false);
     } catch (err) {
       alert('সেভ করতে সমস্যা: ' + String(err));
@@ -161,7 +161,6 @@ export default function Products() {
     setDeleting(p.id);
     try {
       await deleteDoc(doc(db, 'products', p.id));
-      await load();
     } catch (err) {
       alert('মুছতে সমস্যা: ' + String(err));
     }
