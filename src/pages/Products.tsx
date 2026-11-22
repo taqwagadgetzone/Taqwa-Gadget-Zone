@@ -293,7 +293,7 @@ export default function Products() {
       )}
 
       <button type="button" onClick={openAdd}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
         aria-label="নতুন প্রোডাক্ট">＋</button>
 
       {/* ===== Add / Edit ===== */}
@@ -341,7 +341,7 @@ export default function Products() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+          <div className="rounded-2xl border border-[#EBCFB2] bg-[#FFF8F1] p-4">
             <div className="mb-3 text-xs font-bold text-emerald-900">🎨 কালার ও স্টক</div>
             <label className={labelCls}>কালার:পরিমাণ (কমা দিয়ে আলাদা করুন)</label>
             <input value={form.colorStockRaw} onChange={e => set('colorStockRaw', e.target.value)}

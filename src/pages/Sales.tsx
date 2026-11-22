@@ -564,11 +564,11 @@ export default function Sales() {
             action={<Button variant="primary" onClick={openAdd}>＋ নতুন সেল এন্ট্রি</Button>} />
         </Card>
       ) : (
-        <Card className="overflow-hidden bg-gradient-to-b from-white to-emerald-50/50">
+        <Card className="overflow-hidden">
           {/* Desktop table */}
           <div className="hidden overflow-x-auto xl:block">
             <table className="w-full text-sm">
-              <thead className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 text-left text-[11px] font-semibold uppercase tracking-wide text-emerald-50">
+              <thead className="bg-[#0E3B2C] text-left text-xs font-semibold text-[#FDEBD9]">
                 <tr>
                   <th className="px-4 py-3">ইনভয়েস / তারিখ</th>
                   <th className="px-4 py-3">কাস্টমার</th>
@@ -580,7 +580,7 @@ export default function Sales() {
                   <th className="px-4 py-3 text-center">অ্যাকশন</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-emerald-100/70">
+              <tbody className="divide-y divide-[#F3E2D0]">
                 {filtered.map(s => <SaleRowDesktop key={s.id} s={s} busy={busyId === s.id}
                   onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} />)}
               </tbody>
@@ -588,20 +588,20 @@ export default function Sales() {
           </div>
 
           {/* Tablet & mobile cards */}
-          <ul className="divide-y divide-emerald-100/70 xl:hidden">
+          <ul className="divide-y divide-[#F3E2D0] xl:hidden">
             {filtered.map(s => <SaleCard key={s.id} s={s} busy={busyId === s.id}
               onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} />)}
           </ul>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-100 bg-gradient-to-r from-emerald-100/70 via-lime-50 to-emerald-50 px-4 py-3 text-sm">
-            <span className="font-bold text-emerald-900">মোট {filtered.length}টি · ডেলিভারি {totals.delivered}টি</span>
-            <span className="font-bold tabular-nums text-emerald-700">লাভ {BDT(totals.profit)}</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#F3E2D0] bg-[#FFF4EA] px-4 py-3 text-sm">
+            <span className="font-bold text-[#0E3B2C]">মোট {filtered.length}টি · ডেলিভারি {totals.delivered}টি</span>
+            <span className="font-bold tabular-nums text-[#14513B]">লাভ {BDT(totals.profit)}</span>
           </div>
         </Card>
       )}
 
       <button type="button" onClick={openAdd}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
         aria-label="নতুন সেল">＋</button>
 
       {/* ===== Add / Edit ===== */}
@@ -673,7 +673,7 @@ export default function Sales() {
                   placeholder="01XXXXXXXXX" className={cn(inputCls, form.phone && !isPhone(form.phone) && 'border-rose-400')} />
                 {form.phone && !isPhone(form.phone) && <p className="mt-1 text-[11px] text-rose-600">১১ ডিজিট হতে হবে</p>}
                 {phoneHistory.length > 0 && (
-                  <div className="mt-2 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-lime-50 p-3">
+                  <div className="mt-2 rounded-xl border border-[#F5C9A0] bg-[#FFF4EA] p-3">
                     <div className="mb-2 flex items-center justify-between gap-2 text-xs">
                       <span className="font-semibold text-emerald-900">✓ এই নম্বরে আগের অর্ডার: {phoneHistory.length} টি</span>
                       {autoFilled && <span className="text-[11px] text-emerald-700">ঠিকানা বসানো হয়েছে</span>}
@@ -714,7 +714,7 @@ export default function Sales() {
                       <Suggest
                         value={l.category}
                         placeholder="ক্যাটাগরি (যেমন: Smart Watch)"
-                        className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:border-emerald-600 focus:outline-none"
+                        className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:border-[#14513B] focus:outline-none"
                         options={categories.map(cat => ({ label: cat }))}
                         onType={v => setLine(l.id, { category: v })}
                         onPick={v => setLine(l.id, { category: v })}
@@ -820,8 +820,8 @@ export default function Sales() {
 
               <Section title="🔗 Steadfast" tone="green">
                 {!editId && (
-                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
-                    <input type="checkbox" className="mt-1 h-4 w-4 accent-emerald-700" checked={form.bookSteadfast}
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#F5C9A0] bg-[#FFF4EA] p-3">
+                    <input type="checkbox" className="mt-1 h-4 w-4 accent-[#F26B1D]" checked={form.bookSteadfast}
                       onChange={e => set('bookSteadfast', e.target.checked)} />
                     <span className="text-sm">
                       <span className="font-semibold text-emerald-900">সেভ করার সাথেই Steadfast-এ পার্সেল বুক করুন</span>
@@ -891,13 +891,13 @@ function Suggest({
         onChange={e => { onType(e.target.value); setOpen(true); }}
       />
       {open && shown.length > 0 && (
-        <div className="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-auto rounded-xl border border-emerald-100 bg-white p-1 shadow-xl shadow-emerald-900/10">
+        <div className="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-auto rounded-xl border border-[#EBCFB2] bg-white p-1 shadow-xl shadow-[#0E3B2C]/10">
           {shown.slice(0, 60).map((o, idx) => (
             <button
               type="button"
               key={`${o.label}-${idx}`}
               onMouseDown={e => { e.preventDefault(); onPick(o.label); setOpen(false); }}
-              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-900"
+              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#FFF4EA] hover:text-[#0E3B2C]"
             >
               <span className="truncate">{o.label}</span>
               {o.sub && <span className="shrink-0 text-[11px] text-slate-400">{o.sub}</span>}
@@ -912,15 +912,17 @@ function Suggest({
 function Section({
   title, tone, children, right,
 }: { title: string; tone: 'blue' | 'green' | 'amber' | 'violet' | 'slate'; children: React.ReactNode; right?: React.ReactNode }) {
-  const bg = {
-    blue: 'bg-gradient-to-br from-blue-50 via-white to-sky-50 border-blue-100',
-    green: 'bg-gradient-to-br from-emerald-50 via-white to-lime-50 border-emerald-100',
-    amber: 'bg-gradient-to-br from-amber-50 via-white to-orange-50 border-amber-100',
-    violet: 'bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 border-violet-100',
-    slate: 'bg-gradient-to-br from-slate-50 to-white border-slate-200',
+  // সেকশনের উপরের রঙিন দাগই শুধু টোন বোঝায়; বাকি অংশ সাদা, যাতে ইনপুট পড়া সহজ থাকে
+  const bar = {
+    blue: 'bg-blue-500',
+    green: 'bg-[#14513B]',
+    amber: 'bg-[#F26B1D]',
+    violet: 'bg-violet-500',
+    slate: 'bg-slate-400',
   }[tone];
   return (
-    <div className={cn('rounded-2xl border p-4 shadow-sm', bg)}>
+    <div className="relative overflow-hidden rounded-2xl border border-[#EBCFB2] bg-white p-4 pt-5 shadow-sm">
+      <div className={cn('absolute inset-x-0 top-0 h-1', bar)} />
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="text-xs font-bold tracking-tight text-slate-800">{title}</span>
         {right}
@@ -981,7 +983,7 @@ function SaleRowDesktop(p: RowProps) {
   const { s, busy, onStatus } = p;
   const isCourier = s.saleType === 'Courier Sale';
   return (
-    <tr className="align-top transition hover:bg-emerald-50/80">
+    <tr className="align-top transition hover:bg-[#FFF4EA]">
       <td className="px-4 py-3">
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
         <div className="text-[11px] tabular-nums text-slate-400">{s.date}</div>
@@ -1026,7 +1028,7 @@ function SaleCard(p: RowProps) {
   const { s, busy, onStatus } = p;
   const isCourier = s.saleType === 'Courier Sale';
   return (
-    <li className="px-4 py-3.5 transition hover:bg-emerald-50/60">
+    <li className="px-4 py-3.5 transition hover:bg-[#FFF4EA]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">

@@ -410,7 +410,7 @@ export default function Expenses() {
 
       {/* Sticky mobile add button */}
       <button type="button" onClick={openAdd}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
         aria-label="নতুন খরচ">＋</button>
 
       {/* ===== Add / Edit modal ===== */}
@@ -443,7 +443,7 @@ export default function Expenses() {
                   <button key={c.key} type="button" onClick={() => setForm(f => ({ ...f, category: c.key }))}
                     className={cn(
                       'flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition',
-                      on ? 'border-emerald-700 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-600/20' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      on ? 'border-[#14513B] bg-[#E8F3EE] text-[#0E3B2C] ring-2 ring-[#14513B]/20' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                     )}>
                     <span className="text-base">{c.icon}</span><span className="leading-tight">{c.key}</span>
                   </button>

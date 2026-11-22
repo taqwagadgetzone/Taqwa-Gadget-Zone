@@ -1,8 +1,8 @@
 // Shared UI kit — পেজগুলোতে একই রঙ, স্পেসিং ও আচরণ নিশ্চিত করে
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
 
-export const BRAND = '#1a3c2e';
-export const BRAND_2 = '#2d5a40';
+export const BRAND = '#0E3B2C';
+export const BRAND_2 = '#14513B';
 
 export const BDT = (n: number) =>
   '৳' + (Number.isFinite(n) ? n : 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -16,7 +16,7 @@ export function cn(...parts: Array<string | false | null | undefined>) {
 
 export const inputCls =
   'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 ' +
-  'focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 transition';
+  'focus:border-[#14513B] focus:outline-none focus:ring-2 focus:ring-[#14513B]/20 transition';
 
 export const labelCls = 'mb-1.5 block text-xs font-semibold text-slate-600';
 
@@ -24,7 +24,7 @@ export function Card({ children, className }: { children: ReactNode; className?:
   return (
     <div
       className={cn(
-        'rounded-2xl border border-emerald-100/80 bg-gradient-to-b from-white to-emerald-50/40 shadow-[0_1px_2px_rgba(6,78,59,0.05),0_12px_28px_-16px_rgba(6,78,59,0.25)]',
+        'rounded-2xl border border-[#EBCFB2] bg-white shadow-[0_1px_2px_rgba(60,30,10,0.06)]',
         className
       )}
     >
@@ -35,12 +35,13 @@ export function Card({ children, className }: { children: ReactNode; className?:
 
 // প্রতিটি পেজের নিজস্ব সবুজ শেড — একই ডিজাইন সিস্টেম, আলাদা অনুভূতি
 export type Theme = 'emerald' | 'forest' | 'lime' | 'sage' | 'jade';
+// পেজ হেডারের গাঢ় সবুজ — প্রতিটি পেজ আলাদা, তবে একই পরিবারের
 export const THEMES: Record<Theme, string> = {
-  emerald: 'linear-gradient(135deg, #064e3b 0%, #047857 55%, #059669 100%)',
-  forest:  'linear-gradient(135deg, #14532d 0%, #166534 55%, #15803d 100%)',
-  lime:    'linear-gradient(135deg, #365314 0%, #3f6212 55%, #4d7c0f 100%)',
-  sage:    'linear-gradient(135deg, #1f3d2b 0%, #2f5d44 55%, #4f7f63 100%)',
-  jade:    'linear-gradient(135deg, #022c22 0%, #065f46 55%, #0f766e 100%)',
+  emerald: '#0E3B2C',
+  forest:  '#14513B',
+  lime:    '#33561F',
+  sage:    '#2F4F3E',
+  jade:    '#0B4F4A',
 };
 
 export function PageHeader({
@@ -48,14 +49,12 @@ export function PageHeader({
 }: { title: string; subtitle?: string; actions?: ReactNode; theme?: Theme }) {
   return (
     <div
-      className="relative mb-5 flex flex-col gap-4 overflow-hidden rounded-3xl p-4 text-white shadow-[0_20px_44px_-20px_rgba(6,78,59,0.6)] sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      className="relative mb-5 flex flex-col gap-4 overflow-hidden rounded-2xl border-b-4 border-[#F26B1D] p-4 text-white shadow-[0_8px_20px_-12px_rgba(14,59,44,0.55)] sm:flex-row sm:items-center sm:justify-between sm:p-6"
       style={{ background: THEMES[theme] }}
     >
-      <div className="pointer-events-none absolute -right-14 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-lime-200/10 blur-3xl" />
       <div className="relative min-w-0">
-        <h1 className="truncate text-lg font-bold tracking-tight sm:text-2xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-xs text-white/75 sm:text-sm">{subtitle}</p>}
+        <h1 className="font-display truncate text-lg font-bold sm:text-2xl">{title}</h1>
+        {subtitle && <p className="mt-1 text-xs text-white/80 sm:text-sm">{subtitle}</p>}
       </div>
       {actions && <div className="relative flex flex-wrap items-center gap-2 sm:gap-3">{actions}</div>}
     </div>
@@ -64,28 +63,15 @@ export function PageHeader({
 
 type Tone = 'green' | 'red' | 'blue' | 'amber' | 'violet' | 'slate' | 'lime' | 'forest' | 'sage';
 const TONE: Record<Tone, { text: string; bg: string; ring: string; bar: string }> = {
-  green:  { text: 'text-emerald-700', bg: 'bg-emerald-50', ring: 'ring-emerald-100', bar: 'linear-gradient(90deg,#059669,#6ee7b7)' },
-  forest: { text: 'text-green-800',   bg: 'bg-green-50',   ring: 'ring-green-100',   bar: 'linear-gradient(90deg,#15803d,#86efac)' },
-  lime:   { text: 'text-lime-800',    bg: 'bg-lime-50',    ring: 'ring-lime-100',    bar: 'linear-gradient(90deg,#4d7c0f,#bef264)' },
-  sage:   { text: 'text-[#2f5d44]',   bg: 'bg-emerald-50/70', ring: 'ring-emerald-100', bar: 'linear-gradient(90deg,#2f5d44,#9ac9ac)' },
-  red:    { text: 'text-rose-700',    bg: 'bg-rose-50',    ring: 'ring-rose-100',    bar: 'linear-gradient(90deg,#e11d48,#fda4af)' },
-  blue:   { text: 'text-blue-700',    bg: 'bg-blue-50',    ring: 'ring-blue-100',    bar: 'linear-gradient(90deg,#2563eb,#93c5fd)' },
-  amber:  { text: 'text-amber-700',   bg: 'bg-amber-50',   ring: 'ring-amber-100',   bar: 'linear-gradient(90deg,#d97706,#fcd34d)' },
-  violet: { text: 'text-violet-700',  bg: 'bg-violet-50',  ring: 'ring-violet-100',  bar: 'linear-gradient(90deg,#7c3aed,#c4b5fd)' },
-  slate:  { text: 'text-slate-700',   bg: 'bg-slate-100',  ring: 'ring-slate-200',   bar: 'linear-gradient(90deg,#64748b,#cbd5e1)' },
-};
-
-// কার্ডের হালকা রঙিন আভা — প্রতিটি মেট্রিকের নিজের রঙে
-const WASH: Record<Tone, string> = {
-  green:  'from-white to-emerald-50',
-  forest: 'from-white to-green-50',
-  lime:   'from-white to-lime-50',
-  sage:   'from-white to-emerald-50/70',
-  red:    'from-white to-rose-50',
-  blue:   'from-white to-blue-50',
-  amber:  'from-white to-amber-50',
-  violet: 'from-white to-violet-50',
-  slate:  'from-white to-slate-50',
+  green:  { text: 'text-[#14513B]', bg: 'bg-[#E8F3EE]', ring: 'ring-[#CFE6DA]', bar: '#14513B' },
+  forest: { text: 'text-[#14513B]', bg: 'bg-[#E8F3EE]', ring: 'ring-[#CFE6DA]', bar: '#14513B' },
+  lime:   { text: 'text-[#33561F]', bg: 'bg-[#EEF5E6]', ring: 'ring-[#D5E6C4]', bar: '#5B8E2E' },
+  sage:   { text: 'text-[#2F4F3E]', bg: 'bg-[#EDF3EF]', ring: 'ring-[#CDDDD3]', bar: '#2F4F3E' },
+  red:    { text: 'text-rose-700',  bg: 'bg-rose-50',   ring: 'ring-rose-100',  bar: '#E11D48' },
+  blue:   { text: 'text-blue-700',  bg: 'bg-blue-50',   ring: 'ring-blue-100',  bar: '#2563EB' },
+  amber:  { text: 'text-[#B94A12]', bg: 'bg-orange-50', ring: 'ring-orange-100', bar: '#F26B1D' },
+  violet: { text: 'text-violet-700', bg: 'bg-violet-50', ring: 'ring-violet-100', bar: '#7C3AED' },
+  slate:  { text: 'text-slate-700', bg: 'bg-slate-100', ring: 'ring-slate-200', bar: '#64748B' },
 };
 
 export function StatCard({
@@ -93,7 +79,7 @@ export function StatCard({
 }: { label: string; value: string; sub?: string; tone?: Tone; icon?: ReactNode }) {
   const t = TONE[tone];
   return (
-    <Card className={cn('relative overflow-hidden bg-gradient-to-br p-4', WASH[tone])}>
+    <Card className="relative overflow-hidden p-4">
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: t.bar }} />
       <div className="flex items-start justify-between gap-2">
         <span className="text-xs font-medium text-slate-500">{label}</span>
@@ -101,7 +87,7 @@ export function StatCard({
           <span className={cn('flex h-8 w-8 items-center justify-center rounded-lg ring-1', t.bg, t.ring)}>{icon}</span>
         )}
       </div>
-      <div className={cn('mt-2 truncate text-lg font-bold tabular-nums sm:text-xl', t.text)}>{value}</div>
+      <div className={cn('font-display mt-2 truncate text-lg font-bold tabular-nums sm:text-xl', t.text)}>{value}</div>
       {sub && <div className="mt-0.5 truncate text-[11px] text-slate-400">{sub}</div>}
     </Card>
   );
@@ -121,7 +107,7 @@ export function Chip({
 }: { active?: boolean; onClick?: () => void; children: ReactNode; tone?: Tone }) {
   const activeCls = tone === 'red'
     ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
-    : 'bg-gradient-to-r from-emerald-800 to-emerald-600 text-white border-emerald-700 shadow-sm shadow-emerald-900/20';
+    : 'bg-[#14513B] text-white border-[#14513B]';
   return (
     <button
       type="button"
@@ -140,8 +126,8 @@ export function Button({
   variant = 'primary', className, children, ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'accent' | 'ghost' | 'danger' | 'soft' }) {
   const v = {
-    primary: 'bg-gradient-to-r from-emerald-900 to-emerald-700 text-white shadow-md shadow-emerald-900/25 hover:from-emerald-800 hover:to-emerald-600',
-    accent:  'bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-md shadow-emerald-600/25 hover:from-emerald-600 hover:to-lime-600',
+    primary: 'bg-[#14513B] text-white hover:bg-[#0E3B2C]',
+    accent:  'bg-[#F26B1D] text-white hover:bg-[#D9560F]',
     ghost:   'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50',
     danger:  'bg-rose-600 text-white hover:bg-rose-700',
     soft:    'bg-slate-100 text-slate-700 hover:bg-slate-200',
@@ -199,10 +185,9 @@ export function Modal({
         )}
       >
         <div
-          className="flex items-center justify-between px-5 py-4 text-white"
-          style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_2})` }}
+          className="flex items-center justify-between border-b-[3px] border-[#F26B1D] bg-[#0E3B2C] px-5 py-4 text-white"
         >
-          <h2 className="text-base font-bold sm:text-lg">{title}</h2>
+          <h2 className="font-display text-base font-bold sm:text-lg">{title}</h2>
           <button type="button" onClick={onClose} aria-label="বন্ধ করুন"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white">
             ✕

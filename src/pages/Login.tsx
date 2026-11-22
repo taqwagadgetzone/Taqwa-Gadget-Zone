@@ -26,7 +26,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0d2a1f] via-[#1a3c2e] to-[#24603f] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-[#0E3B2C] px-4 py-10">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
         <div className="mb-6 text-center">
           <img src="/logo.png" alt="Taqwa Gadget Zone" className="mx-auto h-auto w-48 sm:w-56" />
