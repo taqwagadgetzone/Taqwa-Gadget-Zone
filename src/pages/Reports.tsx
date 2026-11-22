@@ -123,7 +123,7 @@ export default function Reports() {
 
       {/* Channel */}
       <h2 className="mb-3 text-sm font-bold text-slate-700">চ্যানেল অনুযায়ী লাভ</h2>
-      <div className="mb-5 grid gap-3 md:grid-cols-3">
+      <div className="mb-5 grid gap-3 md:grid-cols-2">
         {CHANNELS.map(ch => <ChannelCard key={ch} ch={ch} r={chan[ch]} />)}
       </div>
 
@@ -329,22 +329,22 @@ export default function Reports() {
 }
 
 function ChannelCard({ ch, r }: { ch: Channel; r: ReturnType<typeof byChannel>[Channel] }) {
-  const tone = ch === 'Facebook' ? 'blue' : ch === 'TikTok' ? 'violet' : 'slate';
-  const icon = ch === 'Facebook' ? '📘' : ch === 'TikTok' ? '🎵' : '🛒';
+  const tone = ch === 'Facebook' ? 'blue' : 'violet';
+  const icon = ch === 'Facebook' ? '📘' : '🎵';
   return (
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-bold text-slate-900">{icon} {ch === 'Other' ? 'অন্যান্য / সরাসরি' : ch}</span>
+        <span className="text-sm font-bold text-slate-900">{icon} {ch}</span>
         <Badge tone={tone}>{r.orders} অর্ডার</Badge>
       </div>
       <dl className="space-y-1.5 text-sm">
         <div className="flex justify-between"><dt className="text-slate-500">বিক্রি</dt><dd className="font-semibold tabular-nums">{BDT(r.sales)}</dd></div>
         <div className="flex justify-between"><dt className="text-slate-500">সেলস লাভ</dt><dd className="font-semibold tabular-nums text-emerald-700">{BDT(r.profit)}</dd></div>
-        {ch !== 'Other' && <div className="flex justify-between"><dt className="text-slate-500">বিজ্ঞাপন খরচ</dt><dd className="font-semibold tabular-nums text-rose-600">− {BDT(r.ads)}</dd></div>}
+        <div className="flex justify-between"><dt className="text-slate-500">বিজ্ঞাপন খরচ</dt><dd className="font-semibold tabular-nums text-rose-600">− {BDT(r.ads)}</dd></div>
         <div className="flex justify-between border-t border-slate-100 pt-1.5"><dt className="font-semibold text-slate-700">নিট লাভ</dt>
           <dd className={cn('font-bold tabular-nums', r.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.net)}</dd></div>
       </dl>
-      {ch !== 'Other' && <div className="mt-2 text-[11px] text-slate-500">ROAS <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b></div>}
+      <div className="mt-2 text-[11px] text-slate-500">ROAS <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b></div>
     </Card>
   );
 }

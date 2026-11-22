@@ -30,7 +30,6 @@ const STATUS_LABEL: Record<string, { label: string; tone: 'green' | 'amber' | 'b
 const CHANNEL_STYLE: Record<Channel, { tone: 'blue' | 'violet' | 'slate'; icon: string }> = {
   Facebook: { tone: 'blue', icon: '📘' },
   TikTok:   { tone: 'violet', icon: '🎵' },
-  Other:    { tone: 'slate', icon: '🛒' },
 };
 
 function greeting() {
@@ -122,14 +121,14 @@ export default function Dashboard() {
       {/* Channel performance */}
       <div className="mb-5">
         <h2 className="mb-3 text-sm font-bold text-slate-700">চ্যানেল অনুযায়ী লাভ</h2>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {CHANNELS.map(ch => {
             const r = chan[ch];
             const st = CHANNEL_STYLE[ch];
             return (
               <Card key={ch} className="p-4">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-sm font-bold text-slate-900">{st.icon} {ch === 'Other' ? 'অন্যান্য / সরাসরি' : ch}</span>
+                  <span className="flex items-center gap-2 text-sm font-bold text-slate-900">{st.icon} {ch}</span>
                   <Badge tone={st.tone}>{r.orders} অর্ডার</Badge>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-center">
@@ -137,9 +136,7 @@ export default function Dashboard() {
                   <div><div className="text-[11px] text-slate-500">বিজ্ঞাপন</div><div className="text-sm font-bold tabular-nums text-rose-600">{BDT(r.ads)}</div></div>
                   <div><div className="text-[11px] text-slate-500">নিট</div><div className={cn('text-sm font-bold tabular-nums', r.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.net)}</div></div>
                 </div>
-                {ch !== 'Other' && (
-                  <div className="mt-3 text-[11px] text-slate-500">ROAS: <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b> <span className="text-slate-400">(বিক্রি ÷ বিজ্ঞাপন)</span></div>
-                )}
+                <div className="mt-3 text-[11px] text-slate-500">ROAS: <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b> <span className="text-slate-400">(বিক্রি ÷ বিজ্ঞাপন)</span></div>
               </Card>
             );
           })}

@@ -8,8 +8,9 @@
 import type { Expense, Product, Sale, SaleItem } from '../types';
 import { RETURNED_STATUSES } from './stock';
 
-export type Channel = 'Facebook' | 'TikTok' | 'Other';
-export const CHANNELS: Channel[] = ['Facebook', 'TikTok', 'Other'];
+// শুধু Facebook ও TikTok চ্যানেল রাখা হয়েছে; অন্য/চ্যানেলহীন সেল চ্যানেল-হিসাবে ধরা হয় না (মোট হিসাবে থাকে)
+export type Channel = 'Facebook' | 'TikTok';
+export const CHANNELS: Channel[] = ['Facebook', 'TikTok'];
 
 const AD_CHANNEL: Record<string, Channel> = { 'Facebook Ads': 'Facebook', 'TikTok Ads': 'TikTok' };
 export const AD_CATEGORIES = Object.keys(AD_CHANNEL);
@@ -23,9 +24,9 @@ export const isLost = (s: Sale) => RETURNED_STATUSES.includes(s.courierDeliveryS
 export const isDelivered = (s: Sale) => s.courierDeliveryStatus === 'delivered';
 export const isCourier = (s: Sale) => s.saleType === 'Courier Sale';
 
-export const channelOfSale = (s: Sale): Channel =>
-  s.customerChannel === 'Facebook' ? 'Facebook' : s.customerChannel === 'TikTok' ? 'TikTok' : 'Other';
-export const channelOfExpense = (e: Expense): Channel => AD_CHANNEL[e.category] ?? 'Other';
+export const channelOfSale = (s: Sale): Channel | null =>
+  s.customerChannel === 'Facebook' ? 'Facebook' : s.customerChannel === 'TikTok' ? 'TikTok' : null;
+export const channelOfExpense = (e: Expense): Channel | null => AD_CHANNEL[e.category] ?? null;
 
 const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const sum = <T,>(arr: T[], f: (x: T) => number | undefined) => arr.reduce((t, x) => t + n(f(x)), 0);
@@ -96,7 +97,7 @@ export function byChannel(sales: Sale[], expenses: Expense[]): Record<Channel, C
   const out = {} as Record<Channel, ChannelRow>;
   for (const ch of CHANNELS) {
     const ss = sales.filter(s => !isLost(s) && channelOfSale(s) === ch);
-    const ads = ch === 'Other' ? 0 : sum(expenses.filter(e => channelOfExpense(e) === ch), e => e.amount);
+    const ads = sum(expenses.filter(e => channelOfExpense(e) === ch), e => e.amount);
     const salesAmt = sum(ss, s => s.salesAmount);
     const profit = sum(ss, saleProfit);
     out[ch] = { orders: ss.length, sales: salesAmt, profit, ads, net: profit - ads, roas: ads > 0 ? salesAmt / ads : 0 };

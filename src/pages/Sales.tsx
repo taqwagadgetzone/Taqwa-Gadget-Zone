@@ -29,7 +29,7 @@ const STATUS_CONFIG: Record<string, { label: string; tone: 'amber' | 'blue' | 'r
   unknown:                    { label: 'অজানা',              tone: 'slate' },
 };
 
-const CHANNELS = ['Facebook', 'TikTok', 'Call', 'WhatsApp', 'Other'];
+const CHANNELS = ['Facebook', 'TikTok'];
 const DELIVERY_CHIPS = [0, 60, 100, 115, 130, 150];
 const ADVANCE_CHIPS = [100, 115, 150, 200, 500];
 const PAYMENT_METHODS = ['bKash', 'Nagad', 'Rocket', 'Cash', 'Bank'];
@@ -181,7 +181,7 @@ export default function Sales() {
 
   const filtered = useMemo(() => sales.filter(s => {
     if (!inPeriod(s)) return false;
-    if (channelFilter && (s.customerChannel || 'Other') !== channelFilter) return false;
+    if (channelFilter && (s.customerChannel || '') !== channelFilter) return false;
     if (statusFilter && s.courierDeliveryStatus !== statusFilter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -243,7 +243,7 @@ export default function Sales() {
     setForm({
       date: s.date || todayStr(),
       saleType: s.saleType || 'Courier Sale',
-      channel: s.customerChannel || 'Other',
+      channel: s.customerChannel || '',
       customerRef: s.customerRef || '',
       phone: s.customerPhone || '',
       address: s.customerAddress || '',
