@@ -73,6 +73,8 @@ export interface Sale {
   invoice?: string;
   // Steadfast-এ যে ইনভয়েস যাবে — আমাদের TGZ ইনভয়েস থেকে আলাদা
   courierInvoice?: string;
+  // Steadfast-এর কাস্টমার ট্র্যাকিং লিংক (https://steadfast.com.bd/tl/…)
+  courierTrackingLink?: string;
   paymentMethod?: string;
   trxId?: string;
   customerDistrict?: string;

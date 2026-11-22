@@ -57,6 +57,7 @@ type SaleForm = {
   district: string;
   invoice: string;
   courierInvoice: string;
+  trackingLink: string;
   lines: Line[];
   courierCharge: string;
   advance: string;
@@ -84,6 +85,7 @@ const emptyForm = (invoice: string): SaleForm => ({
   district: '',
   invoice,
   courierInvoice: '',
+  trackingLink: '',
   lines: [newLine()],
   courierCharge: '115',
   advance: '0',
@@ -301,6 +303,7 @@ export default function Sales() {
       district: s.courierArea || '',
       invoice: s.invoice || s.orderNumber || '',
       courierInvoice: s.courierInvoice || '',
+      trackingLink: s.courierTrackingLink || '',
       lines,
       courierCharge: String(s.courierCharge ?? 0),
       advance: String(s.advanceAmount ?? 0),
@@ -358,6 +361,7 @@ export default function Sales() {
       customerChannel: form.channel || undefined,
       invoice: form.invoice || undefined,
       courierInvoice: form.courierInvoice.trim() || undefined,
+      courierTrackingLink: form.trackingLink.trim() || undefined,
       advanceAmount: c.advance,
       codAmount: c.cod,
       paymentMethod: isCourier && c.advance > 0 ? form.paymentMethod || undefined : undefined,
@@ -411,11 +415,16 @@ export default function Sales() {
               });
               if (res.status === 200 && res.consignment) {
                 const { consignment_id, tracking_code } = res.consignment;
+                // Steadfast যদি উত্তরে কাস্টমার লিংক পাঠায় তবে সেটাও সেভ হবে; না পাঠালে ফর্ম থেকে পেস্ট করা যাবে
+                const trackLink = Object.values(res.consignment).find(
+                  (v): v is string => typeof v === 'string' && v.includes('steadfast.com.bd/tl/')
+                );
                 await updateDoc(doc(db, 'sales', ref.id), {
                   courierTrackingCode: tracking_code,
                   courierTrackingId: String(consignment_id),
                   steadfastConsignmentId: consignment_id,
                   courierDeliveryStatus: 'in_review',
+                  ...(trackLink ? { courierTrackingLink: trackLink } : {}),
                 });
               } else {
                 const errMsg = res.errors ? JSON.stringify(res.errors) : (res.message || 'Unknown error');
@@ -841,6 +850,12 @@ export default function Sales() {
                       placeholder="Steadfast-এ এই নম্বরটি যাবে" className={cn(inputCls, 'font-mono')} />
                     <p className="mt-1 text-[11px] text-slate-500">ওপরের TGZ ইনভয়েস কুরিয়ারে যাবে না। কুরিয়ারের ইনভয়েস এখানে আলাদা করে লিখুন।</p>
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>কাস্টমার ট্র্যাকিং লিংক (ঐচ্ছিক)</label>
+                    <input value={form.trackingLink} onChange={e => set('trackingLink', e.target.value)}
+                      placeholder="Steadfast থেকে কপি করে পেস্ট করুন" className={inputCls} />
+                    <p className="mt-1 text-[11px] text-slate-500">সেভ হলে কার্ডে 🔗 বাটন দেখাবে; এক ক্লিকে কপি হবে।</p>
+                  </div>
                   <div>
                     <label className={labelCls}>স্ট্যাটাস</label>
                     <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls}>
@@ -989,11 +1004,44 @@ interface RowProps {
   onSync: (s: Sale) => void;
 }
 
+// কাস্টমার অনুযায়ী কার্ডের সবুজ শেড — একই কাস্টমারের সব সেল একই রঙে; ফোন না থাকলে নাম বা আইডি
+const CUSTOMER_TINTS = [
+  { bg: '#E3F2EA', bar: '#14513B' },
+  { bg: '#DDF0EC', bar: '#0F766E' },
+  { bg: '#E9F4DC', bar: '#5B8E2E' },
+  { bg: '#D9EEE5', bar: '#0B4F4A' },
+  { bg: '#E6EFE8', bar: '#2F4F3E' },
+];
+function customerTint(s: Sale) {
+  const key = s.customerPhone ? digitsOnly(s.customerPhone) : (s.customerRef || s.id);
+  let h = 0;
+  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return CUSTOMER_TINTS[h % CUSTOMER_TINTS.length];
+}
+
+// ট্র্যাকিং লিংক এক ক্লিকে কপি — কপি হলে বাটনে ✅ দেখায়
+function CopyLinkButton({ link }: { link: string }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      window.prompt('লিংকটি কপি করুন:', link);
+    }
+    setDone(true);
+    window.setTimeout(() => setDone(false), 1800);
+  };
+  return (
+    <IconButton tone="green" title="ট্র্যাকিং লিংক কপি করুন" onClick={copy}>{done ? '✅' : '🔗'}</IconButton>
+  );
+}
+
 function Actions({ s, busy, onEdit, onDelete, onSync }: RowProps) {
   const canSync = isTrackable(s);
   return (
     <div className="flex items-center gap-1.5">
       <IconButton tone="blue" title="এডিট" onClick={() => onEdit(s)}>✏️</IconButton>
+      {s.courierTrackingLink && <CopyLinkButton link={s.courierTrackingLink} />}
       {canSync && (
         <IconButton tone="amber" title="Steadfast স্ট্যাটাস আনুন" disabled={busy} onClick={() => onSync(s)}>{busy ? '…' : '🔄'}</IconButton>
       )}
@@ -1005,9 +1053,10 @@ function Actions({ s, busy, onEdit, onDelete, onSync }: RowProps) {
 function SaleRowDesktop(p: RowProps) {
   const { s, busy, onStatus } = p;
   const isCourier = s.saleType === 'Courier Sale';
+  const tint = customerTint(s);
   return (
-    <tr className="align-top transition hover:bg-[#FFF4EA]">
-      <td className="px-4 py-3">
+    <tr className="align-top" style={{ background: tint.bg }}>
+      <td className="px-4 py-3" style={{ borderLeft: `4px solid ${tint.bar}` }}>
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
         <div className="text-[11px] tabular-nums text-slate-400">{s.date}</div>
         {s.customerChannel && <div className="mt-1"><Badge tone={s.customerChannel === 'TikTok' ? 'violet' : s.customerChannel === 'Facebook' ? 'blue' : 'slate'}>{s.customerChannel}</Badge></div>}
@@ -1050,8 +1099,9 @@ function SaleRowDesktop(p: RowProps) {
 function SaleCard(p: RowProps) {
   const { s, busy, onStatus } = p;
   const isCourier = s.saleType === 'Courier Sale';
+  const tint = customerTint(s);
   return (
-    <li className="px-4 py-3.5 transition hover:bg-[#FFF4EA]">
+    <li className="px-4 py-3.5" style={{ background: tint.bg, borderLeft: `4px solid ${tint.bar}` }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
