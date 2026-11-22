@@ -44,6 +44,16 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: npm run build
 
+      - name: Guard — শুধু stock সাইটের FTP অ্যাকাউন্টে আপলোড হবে
+        # মূল সাইট taqwagadgetzone.com রক্ষার জন্য: FTP_USERNAME stock অ্যাকাউন্ট না হলে deploy বন্ধ।
+        env:
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+        run: |
+          if [ "$FTP_USERNAME" != "u459732638.stock.taqwagadgetzone.com" ]; then
+            echo "FTP_USERNAME stock অ্যাকাউন্টের সাথে মেলে না। মূল সাইট রক্ষায় deploy বন্ধ করা হলো।"
+            exit 1
+          fi
+
       - name: Upload dist to Hostinger over FTP
         # clean-slate বন্ধ রাখা হয়েছে: সার্ভারের steadfast.php ও অন্য ফাইল মুছবে না।
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
