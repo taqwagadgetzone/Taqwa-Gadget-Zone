@@ -1024,6 +1024,28 @@ interface RowProps {
   onPrint: (s: Sale) => void;
 }
 
+// অসম্পূর্ণ তথ্য — চ্যানেল, ফোন, কুরিয়ার সেলের ঠিকানা ও কুরিয়ার ইনভয়েস
+function missingInfo(s: Sale): string[] {
+  const gaps: string[] = [];
+  if (!s.customerChannel) gaps.push('চ্যানেল');
+  if (!s.customerPhone) gaps.push('ফোন');
+  const courier = s.saleType === 'Courier Sale';
+  if (courier && !s.customerAddress) gaps.push('ঠিকানা');
+  if (courier && !s.courierTrackingCode && !s.courierInvoice) gaps.push('কুরিয়ার ইনভয়েস');
+  return gaps;
+}
+
+function GapBadge({ s }: { s: Sale }) {
+  const gaps = missingInfo(s);
+  if (gaps.length === 0) return null;
+  return (
+    <span title={`এখনো লেখা হয়নি: ${gaps.join(', ')}`}
+      className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
+      ⚠ {gaps.join(' · ')} নেই
+    </span>
+  );
+}
+
 // কাস্টমার অনুযায়ী কার্ডের সবুজ শেড — একই কাস্টমারের সব সেল একই রঙে; ফোন না থাকলে নাম বা আইডি
 // প্রতিটি শেড একটু আলাদা ও উজ্জ্বল — সবুজ, আকুয়া, লাইম, এবং লোগোর কমলা ঘেঁষা এপ্রিকট
 const CUSTOMER_TINTS = [
@@ -1098,6 +1120,7 @@ function SaleRowDesktop(p: RowProps) {
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
         <div className="text-[11px] tabular-nums text-slate-400">{s.date}</div>
         {s.customerChannel && <div className="mt-1"><Badge tone={s.customerChannel === 'TikTok' ? 'violet' : s.customerChannel === 'Facebook' ? 'blue' : 'slate'}>{s.customerChannel}</Badge></div>}
+        <div className="mt-1 empty:hidden"><GapBadge s={s} /></div>
       </td>
       <td className="max-w-[200px] px-4 py-3">
         <div className="truncate font-semibold text-slate-900">{s.customerRef || 'সরাসরি বিক্রয়'}</div>
@@ -1146,6 +1169,7 @@ function SaleCard(p: RowProps) {
             <span className="font-mono text-[11px] font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</span>
             <span className="text-[11px] tabular-nums text-slate-400">{s.date}</span>
             {s.customerChannel && <Badge tone={s.customerChannel === 'TikTok' ? 'violet' : s.customerChannel === 'Facebook' ? 'blue' : 'slate'}>{s.customerChannel}</Badge>}
+            <GapBadge s={s} />
           </div>
           <div className="mt-1 truncate text-sm font-semibold text-slate-900">{s.customerRef || 'সরাসরি বিক্রয়'}</div>
           {s.customerPhone && <div className="text-xs text-slate-500">📞 {s.customerPhone}</div>}
