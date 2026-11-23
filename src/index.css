@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/* ইনভয়েস প্রিন্ট — স্ক্রিনে লুকানো; প্রিন্টে শুধু ইনভয়েসটুকু দেখায় */
+.print-area { display: none; }
+@media print {
+  @page { size: A5; margin: 10mm; }
+  html, body { background: #fff !important; }
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff;
+    color: #000;
+    font-family: 'Hind Siliguri', system-ui, sans-serif;
+  }
+}

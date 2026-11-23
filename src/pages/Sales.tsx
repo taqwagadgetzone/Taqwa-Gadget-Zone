@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { logActivity } from '../services/activity';
+import { InvoicePrint } from '../components/InvoicePrint';
 import type { Sale, Product } from '../types';
 import { createParcel, getBalance } from '../services/steadfast';
 import { applyStock, resolveItems, shouldDeduct } from '../services/stock';
@@ -138,6 +139,18 @@ export default function Sales() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  // ইনভয়েস প্রিন্ট — প্রিন্ট ডায়ালগ বন্ধ হলে ইনভয়েসটি স্ক্রিন থেকে সরে যায়
+  const [printSale, setPrintSale] = useState<Sale | null>(null);
+  useEffect(() => {
+    if (!printSale) return;
+    const done = () => setPrintSale(null);
+    window.addEventListener('afterprint', done);
+    const t = window.setTimeout(() => window.print(), 80);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('afterprint', done);
+    };
+  }, [printSale]);
   const [form, setForm] = useState<SaleForm>(emptyForm(''));
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -522,6 +535,7 @@ export default function Sales() {
 
   return (
     <div className="pb-24 sm:pb-8">
+      <InvoicePrint sale={printSale} />
       <PageHeader
         theme="forest"
         title="সেলস ও কুরিয়ার"
@@ -600,7 +614,7 @@ export default function Sales() {
               </thead>
               <tbody className="divide-y divide-[#F3E2D0]">
                 {filtered.map(s => <SaleRowDesktop key={s.id} s={s} busy={busyId === s.id}
-                  onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} />)}
+                  onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} />)}
               </tbody>
             </table>
           </div>
@@ -608,7 +622,7 @@ export default function Sales() {
           {/* Tablet & mobile cards */}
           <ul className="divide-y divide-[#F3E2D0] xl:hidden">
             {filtered.map(s => <SaleCard key={s.id} s={s} busy={busyId === s.id}
-              onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} />)}
+              onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} />)}
           </ul>
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#F3E2D0] bg-[#FFF4EA] px-4 py-3 text-sm">
@@ -1007,6 +1021,7 @@ interface RowProps {
   onDelete: (id: string) => void;
   onStatus: (id: string, v: string) => void;
   onSync: (s: Sale) => void;
+  onPrint: (s: Sale) => void;
 }
 
 // কাস্টমার অনুযায়ী কার্ডের সবুজ শেড — একই কাস্টমারের সব সেল একই রঙে; ফোন না থাকলে নাম বা আইডি
@@ -1054,12 +1069,13 @@ function whatsappUrl(s: Sale): string | null {
   return `https://wa.me/880${d.slice(1)}?text=${encodeURIComponent(body)}`;
 }
 
-function Actions({ s, busy, onEdit, onDelete, onSync }: RowProps) {
+function Actions({ s, busy, onEdit, onDelete, onSync, onPrint }: RowProps) {
   const canSync = isTrackable(s);
   const wa = whatsappUrl(s);
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5">
       <IconButton tone="blue" title="এডিট" onClick={() => onEdit(s)}>✏️</IconButton>
+      <IconButton tone="slate" title="ইনভয়েস প্রিন্ট" onClick={() => onPrint(s)}>🧾</IconButton>
       {s.courierTrackingLink && <CopyLinkButton link={s.courierTrackingLink} />}
       {wa && (
         <IconButton tone="wa" title="WhatsApp-এ মেসেজ" onClick={() => window.open(wa, '_blank', 'noopener,noreferrer')}>💬</IconButton>
