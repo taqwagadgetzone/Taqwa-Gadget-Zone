@@ -24,6 +24,11 @@ function parseColorStock(raw: string): Record<string, number> {
   return out;
 }
 
+// দ্রুত যোগ করার জন্য সাধারণ কালার — ট্যাপ করলে যোগ, আবার ট্যাপে বাদ
+const PRESET_COLORS = ['Black', 'White', 'Silver', 'Gold', 'Rose Gold', 'Blue', 'Red', 'Green', 'Pink', 'Purple', 'Grey', 'Navy', 'Orange', 'Yellow'];
+
+const toColorRaw = (m: Record<string, number>) => Object.entries(m).map(([c, q]) => `${c}:${q}`).join(', ');
+
 const stockTone = (st: string) =>
   st === 'OUT OF STOCK' ? 'red' : st === 'LOW STOCK' ? 'amber' : 'green';
 
@@ -65,6 +70,9 @@ export default function Products() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm());
+  const [newColor, setNewColor] = useState('');
+  const [copyFrom, setCopyFrom] = useState('');
+  const [splitTotal, setSplitTotal] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -107,6 +115,40 @@ export default function Products() {
   const hasColors = Object.keys(colorMap).length > 0;
   const previewStock = hasColors ? colorSum : num(form.currentStock);
   const previewValue = previewStock * num(form.defaultSellingPrice);
+
+  // কালার তালিকা বদলানোর একমাত্র পথ — টেক্সট-ঘর আপডেট হয়
+  const setColorMap = (m: Record<string, number>) => set('colorStockRaw', toColorRaw(m));
+  const togglePreset = (c: string) => {
+    const m = { ...colorMap };
+    if (c in m) delete m[c]; else m[c] = 0;
+    setColorMap(m);
+  };
+  const addCustomColor = () => {
+    const c = newColor.trim().replace(/[,:]/g, ' ');
+    if (!c) return;
+    if (!(c in colorMap)) setColorMap({ ...colorMap, [c]: 0 });
+    setNewColor('');
+  };
+  const copyColorsFrom = (id: string) => {
+    setCopyFrom('');
+    const src = products.find(p => p.id === id);
+    if (!src) return;
+    const m = { ...colorMap };
+    Object.keys(src.colorStock || {}).forEach(c => { if (!(c in m)) m[c] = 0; });
+    setColorMap(m);
+  };
+  // মোট পিস সমানভাবে সব কালারে ভাগ — বাকি এক-দুইটি প্রথম কালারগুলোতে যায়
+  const splitEvenly = () => {
+    const names = Object.keys(colorMap);
+    if (names.length === 0) return;
+    const total = Math.max(0, Math.round(num(splitTotal)));
+    const base = Math.floor(total / names.length);
+    let rem = total - base * names.length;
+    const m: Record<string, number> = {};
+    names.forEach(n => { m[n] = base + (rem > 0 ? 1 : 0); if (rem > 0) rem--; });
+    setColorMap(m);
+  };
+  const copySources = products.filter(p => Object.keys(p.colorStock || {}).length > 0 && p.id !== editing?.id);
 
   const openAdd = () => { setEditing(null); setForm(emptyForm()); setOpen(true); };
   const openEdit = (p: Product) => { setEditing(p); setForm(productToForm(p)); setOpen(true); };
@@ -346,9 +388,44 @@ export default function Products() {
 
           <div className="rounded-2xl border border-[#CFE6DA] bg-[#F3FAF6] p-4">
             <div className="mb-3 text-xs font-bold text-emerald-900">🎨 কালার ও স্টক</div>
-            <label className={labelCls}>কালার:পরিমাণ (কমা দিয়ে আলাদা করুন)</label>
+
+            {/* দ্রুত যোগ — সাধারণ কালারে এক ট্যাপ */}
+            <div className="mb-1.5 text-xs font-medium text-slate-600">দ্রুত যোগ করুন (ট্যাপ = যোগ, আবার ট্যাপ = বাদ)</div>
+            <div className="flex flex-wrap gap-1.5">
+              {PRESET_COLORS.map(c => {
+                const active = c in colorMap;
+                return (
+                  <button key={c} type="button" onClick={() => togglePreset(c)}
+                    className={cn(
+                      'rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition',
+                      active ? 'bg-[#14513B] text-white ring-[#14513B]' : 'bg-white text-slate-700 ring-slate-200 hover:ring-[#3CC08A]'
+                    )}>
+                    {active ? '✓ ' : '+ '}{c}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* অন্য কালার লিখে যোগ, অথবা আগের প্রোডাক্ট থেকে কপি */}
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="flex gap-2">
+                <input value={newColor} onChange={e => setNewColor(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomColor(); } }}
+                  placeholder="অন্য কালার লিখুন" className={inputCls} />
+                <button type="button" onClick={addCustomColor} disabled={!newColor.trim()}
+                  className="shrink-0 rounded-xl bg-[#14513B] px-3 text-sm font-semibold text-white disabled:opacity-40">যোগ</button>
+              </div>
+              <select value={copyFrom} onChange={e => copyColorsFrom(e.target.value)} disabled={copySources.length === 0} className={inputCls}>
+                <option value="">{copySources.length ? 'আগের প্রোডাক্ট থেকে কালার কপি' : 'কপি করার মতো প্রোডাক্ট নেই'}</option>
+                {copySources.map(p => <option key={p.id} value={p.id}>{p.model || p.name} ({Object.keys(p.colorStock || {}).length}টি রং)</option>)}
+              </select>
+            </div>
+
+            {/* পুরোনো টেক্সট-ঘর — সরাসরি লিখতেও পারবেন */}
+            <label className={cn(labelCls, 'mt-3')}>কালার:পরিমাণ (কমা দিয়ে আলাদা করুন)</label>
             <input value={form.colorStockRaw} onChange={e => set('colorStockRaw', e.target.value)}
               placeholder="Black:10, Silver:5, Gold:3" className={inputCls} />
+
             {!hasColors && (
               <div className="mt-3">
                 <label className={labelCls}>মোট স্টক (কালার ছাড়া)</label>
@@ -356,13 +433,24 @@ export default function Products() {
               </div>
             )}
             {hasColors && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {Object.entries(colorMap).map(([c, q]) => (
-                  <span key={c} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-emerald-200">
-                    {c} <b className="text-emerald-800">{q}</b>
-                  </span>
-                ))}
-              </div>
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {Object.entries(colorMap).map(([c, q]) => (
+                    <span key={c} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-emerald-200">
+                      {c} <b className="text-emerald-800">{q}</b>
+                    </span>
+                  ))}
+                </div>
+                {/* স্বয়ংক্রিয় ভাগ — মোট পিস দিলে সব কালারে সমানভাবে বসে */}
+                <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-white p-3 ring-1 ring-emerald-100">
+                  <div className="min-w-[8rem] flex-1">
+                    <label className={labelCls}>মোট পিস (ভাগ হবে সব কালারে)</label>
+                    <input type="number" inputMode="numeric" value={splitTotal} onChange={e => setSplitTotal(e.target.value)} className={inputCls} />
+                  </div>
+                  <button type="button" onClick={splitEvenly} disabled={!splitTotal}
+                    className="rounded-xl bg-[#1A8A62] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">সমানভাগে ভাগ</button>
+                </div>
+              </>
             )}
             <p className="mt-2 text-xs text-slate-500">কালার দিলে মোট স্টক নিজে থেকে যোগফল হবে। বিক্রি হলে সংশ্লিষ্ট কালার থেকে স্টক কমবে।</p>
           </div>
