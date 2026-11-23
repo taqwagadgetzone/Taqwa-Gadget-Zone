@@ -5,7 +5,7 @@ import { logActivity } from '../services/activity';
 import type { Expense, Product } from '../types';
 import {
   BDT, USD, cn, inputCls, labelCls, Card, PageHeader, StatCard, Badge, Chip,
-  Button, IconButton, Modal, Empty, Spinner,
+  Button, IconButton, Modal, Empty, SkeletonList,
 } from '../components/ui';
 
 // ---- Categories (আপনার পুরনো সিস্টেম অনুযায়ী) ----
@@ -243,7 +243,7 @@ export default function Expenses() {
     setDeleting(null);
   };
 
-  if (loading) return <Spinner icon="💸" text="খরচের তালিকা লোড হচ্ছে..." />;
+  if (loading) return <SkeletonList rows={4} />;
 
   const periodLabel = period === 'today' ? 'আজ' : period === 'month' ? monthKey : 'সব সময়';
 

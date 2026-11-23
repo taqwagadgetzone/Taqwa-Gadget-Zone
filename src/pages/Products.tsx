@@ -6,7 +6,7 @@ import type { Product } from '../types';
 import { stockStatus } from '../services/stock';
 import {
   BDT, cn, inputCls, labelCls, Card, PageHeader, StatCard, Badge, Chip, Button,
-  IconButton, Modal, Empty, Spinner,
+  IconButton, Modal, Empty, SkeletonList,
 } from '../components/ui';
 
 // ---------- helpers ----------
@@ -170,7 +170,7 @@ export default function Products() {
     setDeleting(null);
   };
 
-  if (loading) return <Spinner icon="📦" text="প্রোডাক্ট লোড হচ্ছে..." />;
+  if (loading) return <SkeletonList rows={5} />;
 
   return (
     <div className="pb-24 sm:pb-8">

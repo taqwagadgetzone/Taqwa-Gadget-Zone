@@ -218,6 +218,26 @@ export function Empty({ icon, text, action }: { icon: string; text: string; acti
   );
 }
 
+// লোডিংয়ে কার্ডের আকারের ধূসর প্লেসহোল্ডার — স্পিনারের চেয়ে তালিকার আকার আগেই বোঝায়
+export function SkeletonList({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-label="লোড হচ্ছে">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-[#EBCFB2] bg-white p-4 motion-safe:animate-pulse">
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-2">
+              <div className="h-3 w-24 rounded bg-slate-200" />
+              <div className="h-4 w-44 rounded bg-slate-200" />
+            </div>
+            <div className="h-6 w-16 rounded-lg bg-slate-200" />
+          </div>
+          <div className="mt-3 h-3 w-3/4 rounded bg-slate-100" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Spinner({ icon, text }: { icon: string; text: string }) {
   return (
     <div className="flex items-center justify-center py-24">

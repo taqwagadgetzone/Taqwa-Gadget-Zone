@@ -10,7 +10,7 @@ import { fetchCourierStatus, isTrackable, saveCourierStatus, syncCourierStatuses
 import { summarize } from '../services/accounting';
 import {
   BDT, cn, inputCls, labelCls, Card, PageHeader, StatCard, Badge, Chip, Button,
-  IconButton, Modal, Empty, Spinner,
+  IconButton, Modal, Empty, SkeletonList,
 } from '../components/ui';
 
 // ---------- constants ----------
@@ -529,7 +529,7 @@ export default function Sales() {
     setSyncingAll(false);
   };
 
-  if (loading) return <Spinner icon="🛵" text="সেলস লোড হচ্ছে..." />;
+  if (loading) return <SkeletonList rows={4} />;
 
   const periodLabel = period === 'today' ? 'আজ' : period === 'month' ? monthKey : 'সব সময়';
 
