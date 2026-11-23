@@ -230,7 +230,7 @@ function PurchaseTab({ products, purchases }: { products: Product[]; purchases: 
       <Card className="overflow-hidden lg:col-span-3">
         <div className="border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-bold text-slate-800">সব ক্রয়ের তালিকা</h2>
-          <p className="text-[11px] text-slate-500">সর্বশেষ আগে। “স্টকে যোগ” চিহ্নিত ক্রয় মুছলে স্টক থেকেও বাদ যায়।</p>
+          <p className="text-xs text-slate-500">সর্বশেষ আগে। “স্টকে যোগ” চিহ্নিত ক্রয় মুছলে স্টক থেকেও বাদ যায়।</p>
         </div>
         {purchases.length === 0 ? (
           <Empty icon="🧾" text="এখনো কোনো ক্রয় রেকর্ড নেই" />
@@ -462,7 +462,7 @@ function CodTab({ sales, payouts }: { sales: Sale[]; payouts: Payout[] }) {
               <input value={reference} onChange={e => setReference(e.target.value)} placeholder="Steadfast পেমেন্ট আইডি" className={inputCls} />
             </div>
             <Button variant="primary" onClick={save} disabled={saving} className="w-full">{saving ? 'সেভ হচ্ছে…' : '＋ পেমেন্ট সেভ'}</Button>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Steadfast-এর ব্যালেন্স বা পেমেন্ট রিপোর্ট থেকে যে টাকা এসেছে সেটা লিখুন। অ্যাপ নিজে থেকে টাকা আনে না।
             </p>
           </div>

@@ -270,9 +270,9 @@ export default function Products() {
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 text-center">
-                    <div><div className="text-[11px] text-slate-500">স্টক</div><div className="text-base font-bold tabular-nums">{p.currentStock ?? 0}</div></div>
-                    <div><div className="text-[11px] text-slate-500">বিক্রি</div><div className="text-base font-bold tabular-nums text-violet-700">{p.totalSold ?? 0}</div></div>
-                    <div><div className="text-[11px] text-slate-500">লাভ/পিস</div><div className={cn('text-base font-bold tabular-nums', margin >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(margin)}</div></div>
+                    <div><div className="text-xs text-slate-500">স্টক</div><div className="text-base font-bold tabular-nums">{p.currentStock ?? 0}</div></div>
+                    <div><div className="text-xs text-slate-500">বিক্রি</div><div className="text-base font-bold tabular-nums text-violet-700">{p.totalSold ?? 0}</div></div>
+                    <div><div className="text-xs text-slate-500">লাভ/পিস</div><div className={cn('text-base font-bold tabular-nums', margin >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(margin)}</div></div>
                   </div>
 
                   <div className="mt-3"><ColorChips p={p} /></div>
@@ -296,7 +296,7 @@ export default function Products() {
       )}
 
       <button type="button" onClick={openAdd}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#1A8A62] text-2xl text-white shadow-xl transition active:scale-95 lg:hidden"
         aria-label="নতুন প্রোডাক্ট">＋</button>
 
       {/* ===== Add / Edit ===== */}
@@ -344,7 +344,7 @@ export default function Products() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#EBCFB2] bg-[#FFF8F1] p-4">
+          <div className="rounded-2xl border border-[#CFE6DA] bg-[#F3FAF6] p-4">
             <div className="mb-3 text-xs font-bold text-emerald-900">🎨 কালার ও স্টক</div>
             <label className={labelCls}>কালার:পরিমাণ (কমা দিয়ে আলাদা করুন)</label>
             <input value={form.colorStockRaw} onChange={e => set('colorStockRaw', e.target.value)}
@@ -364,7 +364,7 @@ export default function Products() {
                 ))}
               </div>
             )}
-            <p className="mt-2 text-[11px] text-slate-500">কালার দিলে মোট স্টক নিজে থেকে যোগফল হবে। বিক্রি হলে সংশ্লিষ্ট কালার থেকে স্টক কমবে।</p>
+            <p className="mt-2 text-xs text-slate-500">কালার দিলে মোট স্টক নিজে থেকে যোগফল হবে। বিক্রি হলে সংশ্লিষ্ট কালার থেকে স্টক কমবে।</p>
           </div>
         </div>
       </Modal>
@@ -381,7 +381,7 @@ function ColorChips({ p }: { p: Product }) {
         const sold = p.colorSold?.[c] || 0;
         return (
           <span key={c} className={cn(
-            'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] ring-1',
+            'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ring-1',
             q <= 0 ? 'bg-rose-50 text-rose-700 ring-rose-200' : q <= 5 ? 'bg-amber-50 text-amber-800 ring-amber-200' : 'bg-white text-slate-700 ring-slate-200'
           )}>
             {c} <b className="tabular-nums">{q}</b>

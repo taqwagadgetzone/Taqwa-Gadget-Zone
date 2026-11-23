@@ -28,14 +28,14 @@ export function CustomerInsights({ sales }: { sales: Sale[] }) {
     <Card className="overflow-hidden">
       <div className="border-b border-slate-100 px-4 py-3">
         <h2 className="text-sm font-bold text-slate-800">সেরা কাস্টমার (সব সময়ের)</h2>
-        <p className="text-[11px] text-slate-500">ফোন নম্বর ধরে হিসাব। দুইবার বা তার বেশি অর্ডার করলে "নিয়মিত"।</p>
+        <p className="text-xs text-slate-500">ফোন নম্বর ধরে হিসাব। দুইবার বা তার বেশি অর্ডার করলে "নিয়মিত"।</p>
       </div>
       {rows.length === 0 ? (
         <Empty icon="👥" text="এখনো কাস্টমার নেই। ফোন নম্বরসহ সেল যোগ করলে এখানে আসবে।" />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-[#0E3B2C] text-left text-xs font-semibold text-[#FDEBD9]">
+            <thead className="bg-[#0E3B2C] text-left text-xs font-semibold text-[#E6F3EC]">
               <tr>
                 <th className="px-4 py-2.5">কাস্টমার</th>
                 <th className="px-4 py-2.5">ফোন</th>
@@ -46,11 +46,11 @@ export function CustomerInsights({ sales }: { sales: Sale[] }) {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map(r => (
-                <tr key={`${r.phone}-${r.name}`} className="hover:bg-[#FFF4EA]">
+                <tr key={`${r.phone}-${r.name}`} className="hover:bg-[#EEF8F3]">
                   <td className="px-4 py-2.5 font-semibold text-slate-900">
                     {r.name || '—'}
                     {r.orders >= 2 && (
-                      <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">নিয়মিত</span>
+                      <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">নিয়মিত</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 tabular-nums text-slate-600">{r.phone || '—'}</td>
@@ -70,7 +70,7 @@ export function CustomerInsights({ sales }: { sales: Sale[] }) {
 const KIND_LABEL: Record<ActivityKind, string> = { sale: 'সেল', product: 'প্রোডাক্ট', expense: 'খরচ' };
 const KIND_TONE: Record<ActivityKind, string> = {
   sale: 'bg-[#E3F2EA] text-[#14513B]',
-  product: 'bg-[#FDE6CF] text-[#B94A12]',
+  product: 'bg-[#D5EEE1] text-[#14513B]',
   expense: 'bg-[#E9F4DC] text-[#4D7C0F]',
 };
 
@@ -81,7 +81,7 @@ export function ActivityCard() {
     <Card className="overflow-hidden">
       <div className="border-b border-slate-100 px-4 py-3">
         <h2 className="text-sm font-bold text-slate-800">সাম্প্রতিক কার্যক্রম</h2>
-        <p className="text-[11px] text-slate-500">কে কখন সেল, প্রোডাক্ট বা খরচ বদলেছেন।</p>
+        <p className="text-xs text-slate-500">কে কখন সেল, প্রোডাক্ট বা খরচ বদলেছেন।</p>
       </div>
       {items.length === 0 ? (
         <Empty icon="🕘" text="এখনো কোনো কার্যক্রম নেই। নতুন কোনো বদল হলে এখানে দেখাবে।" />
@@ -89,11 +89,11 @@ export function ActivityCard() {
         <ul className="max-h-96 divide-y divide-slate-100 overflow-y-auto">
           {items.map(a => (
             <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm">
-              <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', KIND_TONE[a.kind])}>{KIND_LABEL[a.kind]}</span>
+              <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-semibold', KIND_TONE[a.kind])}>{KIND_LABEL[a.kind]}</span>
               <span className="font-semibold text-slate-900">{a.action}</span>
               <span className="min-w-0 flex-1 truncate text-slate-600">{a.detail}</span>
-              <span className="text-[11px] text-slate-400">{a.by}</span>
-              <span className="text-[11px] tabular-nums text-slate-400">
+              <span className="text-xs text-slate-400">{a.by}</span>
+              <span className="text-xs tabular-nums text-slate-400">
                 {new Date(a.timestamp).toLocaleString('bn-BD', { dateStyle: 'short', timeStyle: 'short' })}
               </span>
             </li>
@@ -114,7 +114,7 @@ export function BackupCard({ sales, expenses, products }: { sales: Sale[]; expen
   return (
     <Card className="p-4">
       <h2 className="text-sm font-bold text-slate-800">ডেটা ব্যাকআপ</h2>
-      <p className="mb-3 text-[11px] text-slate-500">
+      <p className="mb-3 text-xs text-slate-500">
         শেষ ব্যাকআপ: {last ? new Date(last).toLocaleDateString('bn-BD', { dateStyle: 'medium' }) : 'এখনো নেওয়া হয়নি'}। প্রতি ৩০ দিনে একবার নিন।
       </p>
       <div className="grid gap-2 sm:grid-cols-4">
@@ -158,7 +158,7 @@ export function DuplicateCard({ sales }: { sales: Sale[] }) {
     <Card className="overflow-hidden">
       <div className="border-b border-slate-100 px-4 py-3">
         <h2 className="text-sm font-bold text-slate-800">সম্ভাব্য ডুপ্লিকেট কাস্টমার</h2>
-        <p className="text-[11px] text-slate-500">একই ফোনে ভিন্ন নাম, বা একই নামে ভিন্ন ফোন। এডিট করে ঠিক করে নিন।</p>
+        <p className="text-xs text-slate-500">একই ফোনে ভিন্ন নাম, বা একই নামে ভিন্ন ফোন। এডিট করে ঠিক করে নিন।</p>
       </div>
       {none ? (
         <Empty icon="✅" text="কোনো সন্দেহজনক ডুপ্লিকেট পাওয়া যায়নি" />
@@ -169,7 +169,7 @@ export function DuplicateCard({ sales }: { sales: Sale[] }) {
             {byPhone.length === 0 ? <div className="text-xs text-slate-400">নেই</div> : (
               <ul className="space-y-2">
                 {byPhone.map(r => (
-                  <li key={r.key} className="rounded-xl bg-[#FFF4EA] px-3 py-2 text-xs">
+                  <li key={r.key} className="rounded-xl bg-[#EEF8F3] px-3 py-2 text-xs">
                     <div className="font-mono font-semibold text-[#0E3B2C]">📞 {r.key}</div>
                     <div className="text-slate-600">{r.values.join(' · ')}</div>
                   </li>
@@ -182,7 +182,7 @@ export function DuplicateCard({ sales }: { sales: Sale[] }) {
             {byName.length === 0 ? <div className="text-xs text-slate-400">নেই</div> : (
               <ul className="space-y-2">
                 {byName.map(r => (
-                  <li key={r.key} className="rounded-xl bg-[#FFF4EA] px-3 py-2 text-xs">
+                  <li key={r.key} className="rounded-xl bg-[#EEF8F3] px-3 py-2 text-xs">
                     <div className="font-semibold text-[#0E3B2C]">👤 {r.key}</div>
                     <div className="font-mono text-slate-600">{r.values.join(' · ')}</div>
                   </li>

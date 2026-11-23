@@ -278,7 +278,7 @@ export default function Expenses() {
                 active ? 'border-emerald-800 bg-emerald-900 text-white shadow' : 'border-slate-200 bg-white hover:border-slate-300'
               )}>
               <span className="text-base">{c.icon}</span>
-              <span className={cn('mt-1 text-[11px] font-semibold', active ? 'text-emerald-100' : 'text-slate-500')}>{c.key}</span>
+              <span className={cn('mt-1 text-xs font-semibold', active ? 'text-emerald-100' : 'text-slate-500')}>{c.key}</span>
               <span className={cn('text-sm font-bold tabular-nums', active ? 'text-white' : 'text-slate-900')}>{BDT(amt)}</span>
             </button>
           );
@@ -335,11 +335,11 @@ export default function Expenses() {
               <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-bold text-slate-900">{model}</div>
-                  <div className="text-[11px] text-slate-500">{g.items.length}টি খরচ</div>
+                  <div className="text-xs text-slate-500">{g.items.length}টি খরচ</div>
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-sm font-bold tabular-nums text-rose-600">{BDT(g.total)}</div>
-                  <div className="text-[11px] text-slate-400">মোট</div>
+                  <div className="text-xs text-slate-400">মোট</div>
                 </div>
               </div>
               <ExpenseRows items={g.items} onEdit={openEdit} onDelete={remove} deleting={deleting} />
@@ -413,7 +413,7 @@ export default function Expenses() {
 
       {/* Sticky mobile add button */}
       <button type="button" onClick={openAdd}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#1A8A62] text-2xl text-white shadow-xl transition active:scale-95 lg:hidden"
         aria-label="নতুন খরচ">＋</button>
 
       {/* ===== Add / Edit modal ===== */}
@@ -482,7 +482,7 @@ export default function Expenses() {
                 </div>
               )}
               {!form.targetManual && form.targetModel && (
-                <p className="mt-1 text-[11px] text-emerald-700">✓ বিবরণ থেকে অটো সিলেক্ট হয়েছে</p>
+                <p className="mt-1 text-xs text-emerald-700">✓ বিবরণ থেকে অটো সিলেক্ট হয়েছে</p>
               )}
             </div>
           </div>
@@ -499,7 +499,7 @@ export default function Expenses() {
                 });
               }}
               placeholder="যেমন: KW83 Max Facebook Ads" className={inputCls} />
-            <p className="mt-1 text-[11px] text-slate-500">বিবরণে প্রোডাক্টের নাম লিখলে মডেল নিজে থেকে বসে যাবে</p>
+            <p className="mt-1 text-xs text-slate-500">বিবরণে প্রোডাক্টের নাম লিখলে মডেল নিজে থেকে বসে যাবে</p>
           </div>
 
           <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
@@ -558,7 +558,7 @@ function ExpenseRows({
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-sm font-semibold text-slate-900">{e.description}</span>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                 <Badge tone={m.tone}>{e.category}</Badge>
                 {e.targetModel && <Badge tone="slate">{e.targetModel}</Badge>}
                 <span className="tabular-nums">{e.date}</span>

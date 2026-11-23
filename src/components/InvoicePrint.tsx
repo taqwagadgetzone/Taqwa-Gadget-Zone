@@ -18,7 +18,7 @@ export function InvoicePrint({ sale }: { sale: Sale | null }) {
   const due = Math.max(0, total - advance);
   return (
     <div className="print-area" aria-hidden="true">
-      <div className="flex items-start justify-between gap-4 border-b-4 border-[#F26B1D] pb-3">
+      <div className="flex items-start justify-between gap-4 border-b-4 border-[#3CC08A] pb-3">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="" className="h-14 w-auto" />
           <div>

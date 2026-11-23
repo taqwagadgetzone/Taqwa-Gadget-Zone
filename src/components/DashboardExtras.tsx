@@ -59,7 +59,7 @@ export function CourierAlerts({ sales }: { sales: Sale[] }) {
             🔔 নোটিফিকেশন চালু করুন
           </button>
         )}
-        {perm === 'granted' && <span className="text-[11px] text-emerald-700">🔔 নোটিফিকেশন চালু আছে</span>}
+        {perm === 'granted' && <span className="text-xs text-emerald-700">🔔 নোটিফিকেশন চালু আছে</span>}
       </div>
       {items.length > 0 && (
         <ul className="divide-y divide-slate-100">

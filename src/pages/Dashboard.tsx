@@ -112,7 +112,7 @@ export default function Dashboard() {
         <StatCard label="মোট বিক্রি" value={BDT(sm.sales)} sub={`${sm.orders - sm.lost} টি কার্যকর অর্ডার`} tone="blue" icon="💰" />
         <StatCard label="নেট লাভ" value={BDT(sm.netProfit)} sub={`সেলস লাভ ${BDT(sm.salesProfit)} − খরচ ${BDT(sm.expenses)}`}
           tone={sm.netProfit >= 0 ? 'green' : 'red'} icon="📈" />
-        <StatCard label="মোট খরচ" value={BDT(sm.expenses)} sub={`বিজ্ঞাপন ${BDT(sm.adTotal)}`} tone="red" icon="💸" />
+        <StatCard label="মোট খরচ" value={BDT(sm.expenses)} sub={`বিজ্ঞাপন ${BDT(sm.adTotal)}`} tone="sage" icon="💸" />
         <StatCard label="অর্ডার" value={`${sm.orders}`} sub={`ডেলিভারি ${sm.delivered} · ফেরত/বাতিল ${sm.lost}`} tone="violet" icon="🛒" />
       </div>
 
@@ -140,11 +140,11 @@ export default function Dashboard() {
                   <Badge tone={st.tone}>{r.orders} অর্ডার</Badge>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <div><div className="text-[11px] text-slate-500">সেলস লাভ</div><div className="text-sm font-bold tabular-nums text-slate-900">{BDT(r.profit)}</div></div>
-                  <div><div className="text-[11px] text-slate-500">বিজ্ঞাপন</div><div className="text-sm font-bold tabular-nums text-rose-600">{BDT(r.ads)}</div></div>
-                  <div><div className="text-[11px] text-slate-500">নিট</div><div className={cn('text-sm font-bold tabular-nums', r.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.net)}</div></div>
+                  <div><div className="text-xs text-slate-500">সেলস লাভ</div><div className="text-sm font-bold tabular-nums text-slate-900">{BDT(r.profit)}</div></div>
+                  <div><div className="text-xs text-slate-500">বিজ্ঞাপন</div><div className="text-sm font-bold tabular-nums text-rose-600">{BDT(r.ads)}</div></div>
+                  <div><div className="text-xs text-slate-500">নিট</div><div className={cn('text-sm font-bold tabular-nums', r.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.net)}</div></div>
                 </div>
-                <div className="mt-3 text-[11px] text-slate-500">ROAS: <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b> <span className="text-slate-400">(বিক্রি ÷ বিজ্ঞাপন)</span></div>
+                <div className="mt-3 text-xs text-slate-500">ROAS: <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b> <span className="text-slate-400">(বিক্রি ÷ বিজ্ঞাপন)</span></div>
               </Card>
             );
           })}
@@ -156,7 +156,7 @@ export default function Dashboard() {
         <Card className="p-4 lg:col-span-3">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700">গত ১৪ দিনের বিক্রি ও লাভ</h2>
-            <div className="flex items-center gap-3 text-[11px] text-slate-500">
+            <div className="flex items-center gap-3 text-xs text-slate-500">
               <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-blue-500" />বিক্রি</span>
               <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-emerald-500" />লাভ</span>
             </div>
@@ -253,11 +253,11 @@ function OrderRow({ s }: { s: Sale }) {
     <tr className={cn('hover:bg-slate-50/70', isLost(s) && 'opacity-60')}>
       <td className="px-4 py-2.5">
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
-        <div className="text-[11px] text-slate-400 tabular-nums">{s.date}</div>
+        <div className="text-xs text-slate-400 tabular-nums">{s.date}</div>
       </td>
       <td className="px-4 py-2.5">
         <div className="font-medium text-slate-900">{s.customerRef || 'সরাসরি বিক্রয়'}</div>
-        <div className="text-[11px] text-slate-500">{s.customerPhone || ''}</div>
+        <div className="text-xs text-slate-500">{s.customerPhone || ''}</div>
       </td>
       <td className="max-w-[220px] truncate px-4 py-2.5 text-xs text-slate-700" title={itemsText(s)}>{itemsText(s)}</td>
       <td className="px-4 py-2.5 text-xs">{s.customerChannel || '—'}</td>
@@ -273,7 +273,7 @@ function OrderCard({ s }: { s: Sale }) {
     <li className={cn('flex items-start justify-between gap-3 px-4 py-3', isLost(s) && 'opacity-60')}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-mono text-[11px] font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</span>
+          <span className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</span>
           {statusBadge(s)}
         </div>
         <div className="mt-1 truncate text-sm font-medium text-slate-900">{s.customerRef || 'সরাসরি বিক্রয়'}</div>

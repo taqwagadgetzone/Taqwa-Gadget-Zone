@@ -78,7 +78,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
         placeholder="ইনভয়েস, নাম, ফোন, ট্র্যাকিং কোড বা প্রোডাক্ট লিখুন…"
         onKeyDown={e => { if (e.key === 'Enter' && saleHits[0]) goSale(saleHits[0]); }}
         className={inputCls} />
-      <div className="mt-2 text-[11px] text-slate-400">Enter = প্রথম ফলাফল খুলুন · Esc = বন্ধ</div>
+      <div className="mt-2 text-xs text-slate-400">Enter = প্রথম ফলাফল খুলুন · Esc = বন্ধ</div>
 
       {!query ? (
         <div className="py-10 text-center text-sm text-slate-400">{busy ? 'ডেটা আনা হচ্ছে…' : 'খোঁজা শুরু করতে লিখুন'}</div>
@@ -91,7 +91,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
                 {saleHits.map(s => (
                   <li key={s.id}>
                     <button type="button" onClick={() => goSale(s)}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-[#FFF4EA]">
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-[#EEF8F3]">
                       <div className="min-w-0">
                         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || '—'} <span className="font-normal text-slate-400">· {s.date}</span></div>
                         <div className="truncate text-sm font-medium text-slate-900">{s.customerRef || 'সরাসরি বিক্রয়'} {s.customerPhone && <span className="text-xs font-normal text-slate-500">· {s.customerPhone}</span>}</div>
@@ -111,7 +111,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
                 {productHits.map(p => (
                   <li key={p.id}>
                     <button type="button" onClick={goProduct}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-[#FFF4EA]">
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-[#EEF8F3]">
                       <span className="truncate text-sm font-medium text-slate-900">{p.model || p.name}</span>
                       <span className="shrink-0 text-xs tabular-nums text-slate-500">স্টক {p.currentStock ?? 0}</span>
                     </button>

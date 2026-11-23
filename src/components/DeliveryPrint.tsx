@@ -9,10 +9,10 @@ export function DeliveryPrint({ sales }: { sales: Sale[] | null }) {
   const today = new Date().toLocaleDateString('bn-BD', { dateStyle: 'long' });
   return (
     <div className="print-area delivery-print" aria-hidden="true">
-      <div className="flex items-start justify-between gap-4 border-b-4 border-[#F26B1D] pb-2">
+      <div className="flex items-start justify-between gap-4 border-b-4 border-[#3CC08A] pb-2">
         <div>
           <div className="text-base font-bold text-[#0E3B2C]">{SHOP.name} · ডেলিভারি তালিকা</div>
-          <div className="text-[11px]">{SHOP.address} · যোগাযোগ: {SHOP.phone}</div>
+          <div className="text-xs">{SHOP.address} · যোগাযোগ: {SHOP.phone}</div>
         </div>
         <div className="text-right text-xs">
           <div>প্রিন্টের তারিখ: {today}</div>
@@ -20,7 +20,7 @@ export function DeliveryPrint({ sales }: { sales: Sale[] | null }) {
         </div>
       </div>
 
-      <table className="mt-2 w-full border-collapse text-[11px]">
+      <table className="mt-2 w-full border-collapse text-xs">
         <thead>
           <tr className="border-b border-black text-left">
             <th className="py-1">#</th>
@@ -55,7 +55,7 @@ export function DeliveryPrint({ sales }: { sales: Sale[] | null }) {
           </tr>
         </tfoot>
       </table>
-      <div className="mt-6 flex justify-between text-[11px]">
+      <div className="mt-6 flex justify-between text-xs">
         <span>রাইডারের স্বাক্ষর: ____________________</span>
         <span>মালিকের স্বাক্ষর: ____________________</span>
       </div>

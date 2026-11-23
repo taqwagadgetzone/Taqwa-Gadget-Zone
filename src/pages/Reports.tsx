@@ -139,7 +139,7 @@ export default function Reports() {
         {/* Cash */}
         <Card className="p-4 xl:col-span-2">
           <h2 className="mb-1 text-sm font-bold text-slate-800">নগদ হিসাব</h2>
-          <p className="mb-3 text-[11px] text-slate-400">আনুমানিক — স্টক কেনার টাকা এখানে ধরা নেই</p>
+          <p className="mb-3 text-xs text-slate-400">আনুমানিক — স্টক কেনার টাকা এখানে ধরা নেই</p>
           <div className="space-y-2.5 text-sm">
             <Row label="অগ্রিম আদায়" value={sm.advance} tone="green" />
             <Row label="COD আদায় (ডেলিভারি হওয়া)" value={sm.codCollected} tone="green" />
@@ -186,9 +186,9 @@ export default function Reports() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {Object.entries(courier).sort((a, b) => b[1] - a[1]).map(([k, v]) => (
                 <div key={k} className="rounded-xl bg-slate-50 p-3">
-                  <div className="text-[11px] text-slate-500">{k.replace(/_/g, ' ')}</div>
+                  <div className="text-xs text-slate-500">{k.replace(/_/g, ' ')}</div>
                   <div className="text-lg font-bold tabular-nums">{v}</div>
-                  <div className="text-[11px] text-slate-400">{pct(v, salesR.filter(isCourier).length)}</div>
+                  <div className="text-xs text-slate-400">{pct(v, salesR.filter(isCourier).length)}</div>
                 </div>
               ))}
             </div>
@@ -219,14 +219,14 @@ export default function Reports() {
             </table>
           </div>
         )}
-        {products.length > 0 && <div className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">স্টক ভ্যালু (বর্তমান): {BDT(products.reduce((s, p) => s + (p.stockValue || 0), 0))}</div>}
+        {products.length > 0 && <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400">স্টক ভ্যালু (বর্তমান): {BDT(products.reduce((s, p) => s + (p.stockValue || 0), 0))}</div>}
       </Card>
 
       {/* প্রোডাক্ট-ভিত্তিক লাভ-ক্ষতি — কোন প্রোডাক্টে কত খরচ, কত লাভ */}
       <Card className="mb-5 overflow-hidden">
         <div className="border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-bold text-slate-800">প্রোডাক্ট অনুযায়ী লাভ-ক্ষতি</h2>
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-xs text-slate-500">
             সেলস লাভে কুরিয়ার, COD ও অন্যান্য সেল খরচ বাদ দেওয়া। প্রোডাক্টের নামে যুক্ত খরচ সেই প্রোডাক্টে যায়।
           </p>
         </div>
@@ -309,7 +309,7 @@ export default function Reports() {
             <tbody className="divide-y divide-slate-100">
               {days.map(d => (
                 <tr key={d.date} className={cn('hover:bg-slate-50/70', d.date === today && 'bg-emerald-50/50')}>
-                  <td className="px-4 py-2.5 tabular-nums">{d.date}{d.date === today && <span className="ml-2 text-[10px] font-bold text-emerald-700">আজ</span>}</td>
+                  <td className="px-4 py-2.5 tabular-nums">{d.date}{d.date === today && <span className="ml-2 text-[11px] font-bold text-emerald-700">আজ</span>}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{d.orders || '—'}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{d.sales ? BDT(d.sales) : '—'}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-emerald-700">{d.profit ? BDT(d.profit) : '—'}</td>
@@ -351,7 +351,7 @@ function ChannelCard({ ch, r }: { ch: Channel; r: ReturnType<typeof byChannel>[C
         <div className="flex justify-between border-t border-slate-100 pt-1.5"><dt className="font-semibold text-slate-700">নিট লাভ</dt>
           <dd className={cn('font-bold tabular-nums', r.net >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{BDT(r.net)}</dd></div>
       </dl>
-      <div className="mt-2 text-[11px] text-slate-500">ROAS <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b></div>
+      <div className="mt-2 text-xs text-slate-500">ROAS <b className="text-slate-800">{r.roas ? r.roas.toFixed(2) + 'x' : '—'}</b></div>
     </Card>
   );
 }
@@ -394,7 +394,7 @@ function PLTable({ sm }: { sm: ReturnType<typeof summarize> }) {
               <td className={cn('py-2.5 text-right tabular-nums pr-3 font-semibold',
                 l.kind === 'sub' && 'text-rose-600', l.kind === 'final' && (l.value >= 0 ? 'text-emerald-300' : 'text-rose-300'),
                 l.kind === 'total' && 'text-emerald-700')}>{BDT(l.value)}</td>
-              <td className={cn('w-16 py-2.5 pr-3 text-right text-[11px]', l.kind === 'final' ? 'text-emerald-200' : 'text-slate-400')}>{pct(l.value, base)}</td>
+              <td className={cn('w-16 py-2.5 pr-3 text-right text-xs', l.kind === 'final' ? 'text-emerald-200' : 'text-slate-400')}>{pct(l.value, base)}</td>
             </tr>
           ))}
         </tbody>

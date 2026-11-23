@@ -26,8 +26,9 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0E3B2C] px-4 py-10">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+    <div className="app-header relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="circuit-bg pointer-events-none absolute inset-0 opacity-80" />
+      <div className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-[0_30px_60px_-24px_rgba(0,0,0,0.6)] sm:p-8">
         <div className="mb-6 text-center">
           <img src="/logo.png" alt="Taqwa Gadget Zone" className="mx-auto h-auto w-48 sm:w-56" />
           <p className="mt-3 text-sm text-slate-500">স্টক ম্যানেজমেন্ট ও ব্যবসার হিসাব</p>

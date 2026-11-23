@@ -1,5 +1,70 @@
 @import "tailwindcss";
 
+/*
+ * থিম: পুরো অ্যাপ এক সবুজ-পরিবারে। ক্লাসে blue / violet / amber লেখা থাকলেও রং এখানকার সবুজ শেড।
+ * লাল (rose) শুধু লোকসান, বাতিল ও ক্ষতির জন্য রাখা হয়েছে, তাই rose বদলানো হয়নি।
+ */
+@theme {
+  --color-blue-50: #EAF7F2;
+  --color-blue-100: #D2EFE4;
+  --color-blue-200: #A8DFCB;
+  --color-blue-300: #75C9AD;
+  --color-blue-400: #3FAE8A;
+  --color-blue-500: #1F9470;
+  --color-blue-600: #137A5C;
+  --color-blue-700: #0E6249;
+  --color-blue-800: #0B4D3A;
+  --color-blue-900: #083B2D;
+
+  --color-violet-50: #EFF6F1;
+  --color-violet-100: #DCEBE2;
+  --color-violet-200: #BCD9C7;
+  --color-violet-300: #93C3A7;
+  --color-violet-400: #66A685;
+  --color-violet-500: #468A67;
+  --color-violet-600: #366F53;
+  --color-violet-700: #2B5A43;
+  --color-violet-800: #224735;
+  --color-violet-900: #1A3629;
+
+  --color-amber-50: #F3F9E9;
+  --color-amber-100: #E4F2CC;
+  --color-amber-200: #CBE59E;
+  --color-amber-300: #B0D46D;
+  --color-amber-400: #95BF45;
+  --color-amber-500: #7AA32B;
+  --color-amber-600: #5F8320;
+  --color-amber-700: #4A6619;
+  --color-amber-800: #3B5216;
+  --color-amber-900: #2E4012;
+}
+
+/* বড় ও পড়তে সহজ লেখা — সব rem-ভিত্তিক সাইজ একসাথে বাড়ে */
+html { font-size: 17px; }
+@media (min-width: 1280px) { html { font-size: 18px; } }
+
+/* আপ হেডার: গাঢ় সবুজ গ্রেডিয়েন্ট + সার্কিট-লাইনের সূক্ষ্ম প্যাটার্ন */
+.app-header {
+  background:
+    radial-gradient(640px 180px at 92% -60%, rgba(60, 192, 138, 0.38), transparent 70%),
+    linear-gradient(180deg, #0A3026 0%, #0E3B2C 100%);
+}
+/* সার্কিট-লাইনের সূক্ষ্ম প্যাটার্ন — হেডার ও পেজ-হেডারে একই */
+.circuit-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='72' viewBox='0 0 220 72'%3E%3Cg fill='none' stroke='%2384D9B4' stroke-opacity='.16' stroke-width='1.2'%3E%3Cpath d='M0 18h54l10 10h44l10-10h102'/%3E%3Cpath d='M0 58h30l12-12h40'/%3E%3Cpath d='M170 0v22l10 10h40'/%3E%3C/g%3E%3Cg fill='%2384D9B4' fill-opacity='.35'%3E%3Ccircle cx='54' cy='18' r='2.2'/%3E%3Ccircle cx='108' cy='36' r='2'/%3E%3Ccircle cx='170' cy='22' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 220px 72px;
+}
+/* হেডারের নিচের আলোর দাগ — ডান দিকে সবুজ আভা, বাম দিকে ছোট কমলা চিহ্ন */
+.app-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #F26B1D 0 72px, #3CC08A 72px, #9BE7C4 60%, transparent 100%);
+}
+
 /* ইনভয়েস প্রিন্ট — স্ক্রিনে লুকানো; প্রিন্টে শুধু ইনভয়েসটুকু দেখায় */
 .print-area { display: none; }
 @media print {

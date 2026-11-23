@@ -695,7 +695,7 @@ export default function Sales() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-[#F3E2D0] bg-white px-4 py-2 text-xs text-slate-600">
+          <div className="flex items-center justify-between border-b border-[#DDEFE5] bg-white px-4 py-2 text-xs text-slate-600">
             <label className="flex cursor-pointer items-center gap-2 font-medium">
               <input type="checkbox" checked={allVisible} onChange={toggleAll} className="h-4 w-4 accent-[#14513B]" />
               সব নির্বাচন ({filtered.length})
@@ -707,7 +707,7 @@ export default function Sales() {
           {/* Desktop table */}
           <div className="hidden overflow-x-auto xl:block">
             <table className="w-full text-sm">
-              <thead className="bg-[#0E3B2C] text-left text-xs font-semibold text-[#FDEBD9]">
+              <thead className="bg-[#0E3B2C] text-left text-xs font-semibold text-[#E6F3EC]">
                 <tr>
                   <th className="w-10 px-3 py-3"><span className="sr-only">নির্বাচন</span></th>
                   <th className="px-4 py-3">ইনভয়েস / তারিখ</th>
@@ -720,7 +720,7 @@ export default function Sales() {
                   <th className="px-4 py-3 text-center">অ্যাকশন</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F3E2D0]">
+              <tbody className="divide-y divide-[#DDEFE5]">
                 {filtered.map(s => <SaleRowDesktop key={s.id} s={s} busy={busyId === s.id}
                   onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} checked={selected.has(s.id)} onToggle={toggleOne} />)}
               </tbody>
@@ -728,12 +728,12 @@ export default function Sales() {
           </div>
 
           {/* Tablet & mobile cards */}
-          <ul className="divide-y divide-[#F3E2D0] xl:hidden">
+          <ul className="divide-y divide-[#DDEFE5] xl:hidden">
             {filtered.map(s => <SaleCard key={s.id} s={s} busy={busyId === s.id}
               onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} checked={selected.has(s.id)} onToggle={toggleOne} />)}
           </ul>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#F3E2D0] bg-[#FFF4EA] px-4 py-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#DDEFE5] bg-[#EEF8F3] px-4 py-3 text-sm">
             <span className="font-bold text-[#0E3B2C]">মোট {filtered.length}টি · ডেলিভারি {totals.delivered}টি</span>
             <span className="font-bold tabular-nums text-[#14513B]">লাভ {BDT(totals.profit)}</span>
           </div>
@@ -741,12 +741,12 @@ export default function Sales() {
       )}
 
       <button type="button" onClick={openAdd}
-        className={cn('fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden', selected.size > 0 && 'hidden')}
+        className={cn('fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#1A8A62] text-2xl text-white shadow-xl transition active:scale-95 lg:hidden', selected.size > 0 && 'hidden')}
         aria-label="নতুন সেল">＋</button>
 
       {/* বাল্ক অ্যাকশন বার */}
       {selected.size > 0 && (
-        <div className="fixed inset-x-3 bottom-20 z-40 mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 rounded-2xl border-b-4 border-[#F26B1D] bg-[#0E3B2C] px-4 py-3 text-white shadow-2xl md:bottom-6">
+        <div className="fixed inset-x-3 bottom-20 z-40 mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 rounded-2xl border-b-4 border-[#3CC08A] bg-[#0E3B2C] px-4 py-3 text-white shadow-2xl lg:bottom-6">
           <span className="text-sm font-bold">✔ {selected.size}টি নির্বাচিত</span>
           <div className="flex flex-wrap items-center gap-2">
             <select disabled={bulkBusy} value="" onChange={e => { const v = e.target.value; if (v) void bulkStatus(v); }}
@@ -773,7 +773,7 @@ export default function Sales() {
         }>
         <div className="space-y-3 text-sm">
           {selected.size > 0 ? (
-            <div className="rounded-xl bg-[#FFF4EA] px-3 py-2 text-[#14513B]">শুধু নির্বাচিত {selected.size}টি সেলের তালিকা হবে।</div>
+            <div className="rounded-xl bg-[#EEF8F3] px-3 py-2 text-[#14513B]">শুধু নির্বাচিত {selected.size}টি সেলের তালিকা হবে।</div>
           ) : (
             <div className="flex flex-wrap gap-2">
               <Chip active={deliveryScope === 'open'} onClick={() => setDeliveryScope('open')}>সব খোলা সেল</Chip>
@@ -854,16 +854,16 @@ export default function Sales() {
                 <label className={labelCls}>মোবাইল নম্বর</label>
                 <input type="tel" inputMode="tel" value={form.phone} onChange={e => onPhoneChange(e.target.value)}
                   placeholder="01XXXXXXXXX" className={cn(inputCls, form.phone && !isPhone(form.phone) && 'border-rose-400')} />
-                {form.phone && !isPhone(form.phone) && <p className="mt-1 text-[11px] text-rose-600">১১ ডিজিট হতে হবে</p>}
+                {form.phone && !isPhone(form.phone) && <p className="mt-1 text-xs text-rose-600">১১ ডিজিট হতে হবে</p>}
                 {phoneHistory.length > 0 && (
-                  <div className="mt-2 rounded-xl border border-[#F5C9A0] bg-[#FFF4EA] p-3">
+                  <div className="mt-2 rounded-xl border border-[#B9DFCB] bg-[#EEF8F3] p-3">
                     <div className="mb-2 flex items-center justify-between gap-2 text-xs">
                       <span className="font-semibold text-emerald-900">✓ এই নম্বরে আগের অর্ডার: {phoneHistory.length} টি</span>
-                      {autoFilled && <span className="text-[11px] text-emerald-700">ঠিকানা বসানো হয়েছে</span>}
+                      {autoFilled && <span className="text-xs text-emerald-700">ঠিকানা বসানো হয়েছে</span>}
                     </div>
                     <div className="space-y-1.5">
                       {phoneHistory.slice(0, 3).map(s => (
-                        <div key={s.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/80 px-2.5 py-1.5 text-[11px] ring-1 ring-emerald-100">
+                        <div key={s.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/80 px-2.5 py-1.5 text-xs ring-1 ring-emerald-100">
                           <span className="min-w-0 truncate text-slate-600">{s.date} · {s.model || '—'}</span>
                           <span className="shrink-0 font-semibold tabular-nums text-emerald-800">{BDT(s.salesAmount || 0)}</span>
                         </div>
@@ -892,7 +892,7 @@ export default function Sales() {
               {c.lines.map((l, i) => (
                 <div key={l.id} className="rounded-xl border border-[#9FCDB4] bg-[#EEF8F3] p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="shrink-0 text-[11px] font-semibold text-[#2F4F3E]">আইটেম #{i + 1}</span>
+                    <span className="shrink-0 text-xs font-semibold text-[#2F4F3E]">আইটেম #{i + 1}</span>
                     <div className="min-w-0 flex-1">
                       <Suggest
                         value={l.category}
@@ -945,7 +945,7 @@ export default function Sales() {
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-[11px] text-slate-400">মডেল লিখলে স্টক ও দাম থেকে অটো ভরবে। এক অর্ডারে একাধিক প্রোডাক্ট দিতে পারবেন।</p>
+            <p className="mt-2 text-xs text-slate-400">মডেল লিখলে স্টক ও দাম থেকে অটো ভরবে। এক অর্ডারে একাধিক প্রোডাক্ট দিতে পারবেন।</p>
           </Section>
 
           {/* Delivery & payment */}
@@ -990,10 +990,10 @@ export default function Sales() {
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-white p-3 text-sm sm:grid-cols-4">
-                  <div><div className="text-[11px] text-slate-500">প্রোডাক্ট + ডেলিভারি</div><div className="font-bold tabular-nums">{BDT(c.bill)}</div></div>
-                  <div><div className="text-[11px] text-slate-500">অগ্রিম</div><div className="font-bold tabular-nums text-emerald-700">{BDT(c.advance)}</div></div>
-                  <div><div className="text-[11px] text-slate-500">COD বাকি</div><div className="font-bold tabular-nums text-amber-700">{BDT(c.cod)}</div></div>
-                  <div><div className="text-[11px] text-slate-500">কন্ডিশন চার্জ (১%)</div><div className="font-bold tabular-nums text-rose-600">{BDT(c.condition)}</div></div>
+                  <div><div className="text-xs text-slate-500">প্রোডাক্ট + ডেলিভারি</div><div className="font-bold tabular-nums">{BDT(c.bill)}</div></div>
+                  <div><div className="text-xs text-slate-500">অগ্রিম</div><div className="font-bold tabular-nums text-emerald-700">{BDT(c.advance)}</div></div>
+                  <div><div className="text-xs text-slate-500">COD বাকি</div><div className="font-bold tabular-nums text-amber-700">{BDT(c.cod)}</div></div>
+                  <div><div className="text-xs text-slate-500">কন্ডিশন চার্জ (১%)</div><div className="font-bold tabular-nums text-rose-600">{BDT(c.condition)}</div></div>
                 </div>
               </Section>
 
@@ -1003,8 +1003,8 @@ export default function Sales() {
 
               <Section title="🔗 Steadfast" tone="green">
                 {!editId && (
-                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#F5C9A0] bg-[#FFF4EA] p-3">
-                    <input type="checkbox" className="mt-1 h-4 w-4 accent-[#F26B1D]" checked={form.bookSteadfast}
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#B9DFCB] bg-[#EEF8F3] p-3">
+                    <input type="checkbox" className="mt-1 h-4 w-4 accent-[#3CC08A]" checked={form.bookSteadfast}
                       onChange={e => set('bookSteadfast', e.target.checked)} />
                     <span className="text-sm">
                       <span className="font-semibold text-emerald-900">সেভ করার সাথেই Steadfast-এ পার্সেল বুক করুন</span>
@@ -1017,13 +1017,13 @@ export default function Sales() {
                     <label className={labelCls}>কুরিয়ার ইনভয়েস</label>
                     <input value={form.courierInvoice} onChange={e => set('courierInvoice', e.target.value)}
                       placeholder="Steadfast-এ এই নম্বরটি যাবে" className={cn(inputCls, 'font-mono')} />
-                    <p className="mt-1 text-[11px] text-slate-500">ওপরের TGZ ইনভয়েস কুরিয়ারে যাবে না। কুরিয়ারের ইনভয়েস এখানে আলাদা করে লিখুন।</p>
+                    <p className="mt-1 text-xs text-slate-500">ওপরের TGZ ইনভয়েস কুরিয়ারে যাবে না। কুরিয়ারের ইনভয়েস এখানে আলাদা করে লিখুন।</p>
                   </div>
                   <div className="sm:col-span-2">
                     <label className={labelCls}>কাস্টমার ট্র্যাকিং লিংক (ঐচ্ছিক)</label>
                     <input value={form.trackingLink} onChange={e => set('trackingLink', e.target.value)}
                       placeholder="Steadfast থেকে কপি করে পেস্ট করুন" className={inputCls} />
-                    <p className="mt-1 text-[11px] text-slate-500">সেভ হলে কার্ডে 🔗 বাটন দেখাবে; এক ক্লিকে কপি হবে।</p>
+                    <p className="mt-1 text-xs text-slate-500">সেভ হলে কার্ডে 🔗 বাটন দেখাবে; এক ক্লিকে কপি হবে।</p>
                   </div>
                   <div>
                     <label className={labelCls}>স্ট্যাটাস</label>
@@ -1066,8 +1066,8 @@ type SuggestOption = { label: string; sub?: string };
 
 // মডেলের ঘর — আইটেমের মধ্যে আলাদা করে দেখানোর জন্য কমলা-পীচ
 const modelCls =
-  'w-full rounded-xl border border-[#F5C9A0] bg-[#FFF1E4] px-3 py-2.5 text-sm font-semibold text-[#0E3B2C] ' +
-  'placeholder:font-normal placeholder:text-[#B9895F] focus:border-[#F26B1D] focus:outline-none focus:ring-2 focus:ring-[#F26B1D]/25 transition';
+  'w-full rounded-xl border border-[#B9DFCB] bg-[#E9F6EF] px-3 py-2.5 text-sm font-semibold text-[#0E3B2C] ' +
+  'placeholder:font-normal placeholder:text-[#5E8C75] focus:border-[#3CC08A] focus:outline-none focus:ring-2 focus:ring-[#3CC08A]/25 transition';
 
 // নিজস্ব সাজেশন বক্স — ঘরে লেখা থাকলেও পুরো তালিকা দেখায়, তাই আগের লেখা মুছতে হয় না
 function Suggest({
@@ -1096,16 +1096,16 @@ function Suggest({
         onChange={e => { onType(e.target.value); setOpen(true); }}
       />
       {open && shown.length > 0 && (
-        <div className="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-auto rounded-xl border border-[#EBCFB2] bg-white p-1 shadow-xl shadow-[#0E3B2C]/10">
+        <div className="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-auto rounded-xl border border-[#CFE6DA] bg-white p-1 shadow-xl shadow-[#0E3B2C]/10">
           {shown.slice(0, 60).map((o, idx) => (
             <button
               type="button"
               key={`${o.label}-${idx}`}
               onMouseDown={e => { e.preventDefault(); onPick(o.label); setOpen(false); }}
-              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#FFF4EA] hover:text-[#0E3B2C]"
+              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#EEF8F3] hover:text-[#0E3B2C]"
             >
               <span className="truncate">{o.label}</span>
-              {o.sub && <span className="shrink-0 text-[11px] text-slate-400">{o.sub}</span>}
+              {o.sub && <span className="shrink-0 text-xs text-slate-400">{o.sub}</span>}
             </button>
           ))}
         </div>
@@ -1119,7 +1119,7 @@ function Section({
 }: { title: string; tone: 'blue' | 'green' | 'amber' | 'violet' | 'slate'; children: React.ReactNode; right?: React.ReactNode }) {
   // প্রতিটি সেকশনের নিজের সবুজ শেড; উপরের মোটা দাগ সেই শেডের গাঢ় রূপ। ইনপুট সাদা রাখা হয়েছে, তাই পড়া সহজ।
   const shade = {
-    blue: { bg: '#D3EDE4', bar: '#0F766E' },
+    blue: { bg: '#D3EDE4', bar: '#0F7A60' },
     green: { bg: '#C4E3D1', bar: '#14513B' },
     amber: { bg: '#DCEEC9', bar: '#5B8E2E' },
     violet: { bg: '#CFE5D9', bar: '#2F4F3E' },
@@ -1192,7 +1192,7 @@ function GapBadge({ s }: { s: Sale }) {
   if (gaps.length === 0) return null;
   return (
     <span title={`এখনো লেখা হয়নি: ${gaps.join(', ')}`}
-      className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
+      className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200">
       ⚠ {gaps.join(' · ')} নেই
     </span>
   );
@@ -1201,11 +1201,11 @@ function GapBadge({ s }: { s: Sale }) {
 // কাস্টমার অনুযায়ী কার্ডের সবুজ শেড — একই কাস্টমারের সব সেল একই রঙে; ফোন না থাকলে নাম বা আইডি
 // প্রতিটি শেড একটু আলাদা ও উজ্জ্বল — সবুজ, আকুয়া, লাইম, এবং লোগোর কমলা ঘেঁষা এপ্রিকট
 const CUSTOMER_TINTS = [
-  { bg: '#CFEBDD', bar: '#14513B' },
-  { bg: '#FDE6CF', bar: '#E0601A' },
-  { bg: '#CBEBE6', bar: '#0F766E' },
-  { bg: '#E2F0C6', bar: '#4D7C0F' },
-  { bg: '#D5E3D9', bar: '#2F4F3E' },
+  { bg: '#C8EEDB', bar: '#14513B' },  // মিন্ট
+  { bg: '#E4F3C6', bar: '#4D7C0F' },  // পিস্তা
+  { bg: '#C2E9EA', bar: '#0F6E7A' },  // অ্যাকুয়া
+  { bg: '#DFE9E0', bar: '#4F6B57' },  // ধূসর সবুজ
+  { bg: '#EEF2CF', bar: '#6B7F1C' },  // জলপাই
 ];
 function customerTint(s: Sale) {
   const key = s.customerPhone ? digitsOnly(s.customerPhone) : (s.customerRef || s.id);
@@ -1286,29 +1286,29 @@ function SaleRowDesktop(p: RowProps) {
       </td>
       <td className="px-4 py-3" style={{ borderLeft: `6px solid ${tint.bar}` }}>
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
-        <div className="text-[11px] tabular-nums text-slate-400">{s.date}</div>
+        <div className="text-xs tabular-nums text-slate-400">{s.date}</div>
         {s.customerChannel && <div className="mt-1"><Badge tone={s.customerChannel === 'TikTok' ? 'violet' : s.customerChannel === 'Facebook' ? 'blue' : 'slate'}>{s.customerChannel}</Badge></div>}
         <div className="mt-1 empty:hidden"><GapBadge s={s} /></div>
       </td>
       <td className="max-w-[200px] px-4 py-3">
         <div className="truncate font-semibold text-slate-900">{s.customerRef || 'সরাসরি বিক্রয়'}</div>
         {s.customerPhone && <div className="text-xs text-slate-500">📞 {s.customerPhone}</div>}
-        {s.customerAddress && <div className="truncate text-[11px] text-slate-400" title={s.customerAddress}>📍 {s.customerAddress}</div>}
+        {s.customerAddress && <div className="truncate text-xs text-slate-400" title={s.customerAddress}>📍 {s.customerAddress}</div>}
       </td>
       <td className="max-w-[220px] px-4 py-3 text-xs text-slate-700">
         <div className="line-clamp-2">{itemsText(s)}</div>
-        <div className="mt-0.5 text-[11px] text-slate-400">Qty {s.quantity || 1}</div>
+        <div className="mt-0.5 text-xs text-slate-400">Qty {s.quantity || 1}</div>
       </td>
       <td className="px-4 py-3 text-right tabular-nums">
         <div className="font-bold text-slate-900">{BDT(s.salesAmount || 0)}</div>
-        {(s.advanceAmount || 0) > 0 && <div className="text-[11px] text-emerald-600">অগ্রিম {BDT(s.advanceAmount || 0)}</div>}
-        {(s.codAmount || 0) > 0 && <div className="text-[11px] text-amber-700">COD {BDT(s.codAmount || 0)}</div>}
+        {(s.advanceAmount || 0) > 0 && <div className="text-xs text-emerald-600">অগ্রিম {BDT(s.advanceAmount || 0)}</div>}
+        {(s.codAmount || 0) > 0 && <div className="text-xs text-amber-700">COD {BDT(s.codAmount || 0)}</div>}
       </td>
       <td className="px-4 py-3">
         {s.courierTrackingCode ? (
           <>
             <div className="font-mono text-xs font-semibold text-blue-700">{s.courierTrackingCode}</div>
-            <div className="text-[11px] text-slate-400">{s.courierName} · চার্জ {BDT(s.courierCharge || 0)}</div>
+            <div className="text-xs text-slate-400">{s.courierName} · চার্জ {BDT(s.courierCharge || 0)}</div>
           </>
         ) : <span className="text-slate-300">—</span>}
       </td>
@@ -1335,8 +1335,8 @@ function SaleCard(p: RowProps) {
         <input type="checkbox" aria-label="নির্বাচন" checked={p.checked} onChange={() => p.onToggle(s.id)} className="mt-1 h-4 w-4 shrink-0 accent-[#14513B]" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-mono text-[11px] font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</span>
-            <span className="text-[11px] tabular-nums text-slate-400">{s.date}</span>
+            <span className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</span>
+            <span className="text-xs tabular-nums text-slate-400">{s.date}</span>
             {s.customerChannel && <Badge tone={s.customerChannel === 'TikTok' ? 'violet' : s.customerChannel === 'Facebook' ? 'blue' : 'slate'}>{s.customerChannel}</Badge>}
             <GapBadge s={s} />
           </div>
@@ -1350,7 +1350,7 @@ function SaleCard(p: RowProps) {
         </div>
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 tabular-nums">
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 tabular-nums">
         {(s.advanceAmount || 0) > 0 && <span className="text-emerald-600">অগ্রিম {BDT(s.advanceAmount || 0)}</span>}
         {(s.codAmount || 0) > 0 && <span className="text-amber-700">COD {BDT(s.codAmount || 0)}</span>}
         {s.courierTrackingCode && <span className="font-mono text-blue-700">{s.courierTrackingCode}</span>}

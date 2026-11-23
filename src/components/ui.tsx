@@ -24,7 +24,7 @@ export function Card({ children, className }: { children: ReactNode; className?:
   return (
     <div
       className={cn(
-        'rounded-2xl border border-[#EBCFB2] bg-white shadow-[0_1px_2px_rgba(60,30,10,0.06)]',
+        'rounded-2xl border border-[#CFE6DA] bg-white shadow-[0_1px_2px_rgba(60,30,10,0.06)]',
         className
       )}
     >
@@ -49,14 +49,22 @@ export function PageHeader({
 }: { title: string; subtitle?: string; actions?: ReactNode; theme?: Theme }) {
   return (
     <div
-      className="relative mb-5 flex flex-col gap-4 overflow-hidden rounded-2xl border-b-4 border-[#F26B1D] p-4 text-white shadow-[0_8px_20px_-12px_rgba(14,59,44,0.55)] sm:flex-row sm:items-center sm:justify-between sm:p-6"
-      style={{ background: THEMES[theme] }}
+      className="relative mb-6 overflow-hidden rounded-3xl text-white shadow-[0_20px_44px_-22px_rgba(10,48,38,0.75)]"
+      style={{ background: `radial-gradient(560px 220px at 100% -10%, rgba(60,192,138,0.38), transparent 70%), linear-gradient(135deg, ${THEMES[theme]} 0%, #0A3026 100%)` }}
     >
-      <div className="relative min-w-0">
-        <h1 className="font-display truncate text-lg font-bold sm:text-2xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-xs text-white/80 sm:text-sm">{subtitle}</p>}
+      <div className="circuit-bg pointer-events-none absolute inset-0 opacity-80" />
+      {/* দুটি রিং — ডিভাইসের স্ক্রিন/সেন্সরের মতো গোল আভাস */}
+      <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border border-white/10" />
+      <div className="pointer-events-none absolute -right-5 -top-10 h-36 w-36 rounded-full border border-[#3CC08A]/40" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-[#F26B1D] via-[#3CC08A] to-transparent" />
+      <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+        <div className="min-w-0">
+          <span className="mb-3 block h-1 w-12 rounded-full bg-[#3CC08A]" />
+          <h1 className="font-display truncate text-2xl font-bold leading-tight sm:text-[2rem]">{title}</h1>
+          {subtitle && <p className="mt-1.5 text-sm text-white/75 sm:text-base">{subtitle}</p>}
+        </div>
+        {actions && <div className="relative flex flex-wrap items-center gap-2 sm:gap-3">{actions}</div>}
       </div>
-      {actions && <div className="relative flex flex-wrap items-center gap-2 sm:gap-3">{actions}</div>}
     </div>
   );
 }
@@ -68,9 +76,9 @@ const TONE: Record<Tone, { text: string; bg: string; ring: string; bar: string }
   lime:   { text: 'text-[#33561F]', bg: 'bg-[#EEF5E6]', ring: 'ring-[#D5E6C4]', bar: '#5B8E2E' },
   sage:   { text: 'text-[#2F4F3E]', bg: 'bg-[#EDF3EF]', ring: 'ring-[#CDDDD3]', bar: '#2F4F3E' },
   red:    { text: 'text-rose-700',  bg: 'bg-rose-50',   ring: 'ring-rose-100',  bar: '#E11D48' },
-  blue:   { text: 'text-blue-700',  bg: 'bg-blue-50',   ring: 'ring-blue-100',  bar: '#2563EB' },
-  amber:  { text: 'text-[#B94A12]', bg: 'bg-orange-50', ring: 'ring-orange-100', bar: '#F26B1D' },
-  violet: { text: 'text-violet-700', bg: 'bg-violet-50', ring: 'ring-violet-100', bar: '#7C3AED' },
+  blue:   { text: 'text-blue-700',  bg: 'bg-blue-50',   ring: 'ring-blue-100',  bar: '#0F8A6C' },
+  amber:  { text: 'text-amber-800', bg: 'bg-amber-50', ring: 'ring-amber-100', bar: '#7AA32B' },
+  violet: { text: 'text-violet-700', bg: 'bg-violet-50', ring: 'ring-violet-100', bar: '#4F7F66' },
   slate:  { text: 'text-slate-700', bg: 'bg-slate-100', ring: 'ring-slate-200', bar: '#64748B' },
 };
 
@@ -88,7 +96,7 @@ export function StatCard({
         )}
       </div>
       <div className={cn('font-display mt-2 truncate text-lg font-bold tabular-nums sm:text-xl', t.text)}>{value}</div>
-      {sub && <div className="mt-0.5 truncate text-[11px] text-slate-400">{sub}</div>}
+      {sub && <div className="mt-0.5 truncate text-xs text-slate-400">{sub}</div>}
     </Card>
   );
 }
@@ -96,7 +104,7 @@ export function StatCard({
 export function Badge({ tone = 'slate', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
   const t = TONE[tone];
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ring-1', t.bg, t.text, t.ring, className)}>
+    <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1', t.bg, t.text, t.ring, className)}>
       {children}
     </span>
   );
@@ -127,7 +135,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'accent' | 'ghost' | 'danger' | 'soft' }) {
   const v = {
     primary: 'bg-[#14513B] text-white hover:bg-[#0E3B2C]',
-    accent:  'bg-[#F26B1D] text-white hover:bg-[#D9560F]',
+    accent:  'bg-[#1A8A62] text-white hover:bg-[#136F4F]',
     ghost:   'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50',
     danger:  'bg-rose-600 text-white hover:bg-rose-700',
     soft:    'bg-slate-100 text-slate-700 hover:bg-slate-200',
@@ -189,7 +197,7 @@ export function Modal({
         )}
       >
         <div
-          className="flex items-center justify-between border-b-[3px] border-[#F26B1D] bg-[#0E3B2C] px-5 py-4 text-white"
+          className="flex items-center justify-between border-b-[3px] border-[#3CC08A] bg-[#0E3B2C] px-5 py-4 text-white"
         >
           <h2 className="font-display text-base font-bold sm:text-lg">{title}</h2>
           <button type="button" onClick={onClose} aria-label="বন্ধ করুন"
@@ -223,7 +231,7 @@ export function SkeletonList({ rows = 4 }: { rows?: number }) {
   return (
     <div className="space-y-3" aria-busy="true" aria-label="লোড হচ্ছে">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="rounded-2xl border border-[#EBCFB2] bg-white p-4 motion-safe:animate-pulse">
+        <div key={i} className="rounded-2xl border border-[#CFE6DA] bg-white p-4 motion-safe:animate-pulse">
           <div className="flex items-center justify-between gap-3">
             <div className="space-y-2">
               <div className="h-3 w-24 rounded bg-slate-200" />
