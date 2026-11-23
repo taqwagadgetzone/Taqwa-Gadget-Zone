@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { auth } from './firebase';
+import { isOwnerEmail } from './config/owner';
 
 interface AuthContextType {
   user: User | null;
@@ -19,14 +20,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+      // মালিক ছাড়া অন্য কোনো অ্যাকাউন্ট ঢুকলে সেশন বন্ধ
+      if (u && !isOwnerEmail(u.email)) {
+        void signOut(auth);
+        setUser(null);
+      } else {
+        setUser(u);
+      }
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    if (!isOwnerEmail(cred.user.email)) {
+      await signOut(auth);
+      throw new Error('NOT_OWNER');
+    }
   };
 
   const logout = async () => {

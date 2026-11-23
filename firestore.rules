@@ -2,9 +2,15 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only authenticated users can read/write all data
+    // শুধু মালিকের ইমেইলের লগইন করা অ্যাকাউন্ট ডেটা পড়তে ও লিখতে পারবে।
+    // ইমেইল বদলালে src/config/owner.ts-এও বদলাতে হবে।
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'taqwagadgetzone@gmail.com';
+    }
+
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isOwner();
     }
   }
 }

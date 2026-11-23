@@ -1,5 +1,6 @@
 {
   "firestore": {
+    "database": "ai-studio-taqwagadgetzone-63d8bb83-bde9-4918-8a57-e8b2741a455b",
     "rules": "firestore.rules"
   },
   "hosting": {

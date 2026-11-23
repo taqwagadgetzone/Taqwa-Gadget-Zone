@@ -18,8 +18,10 @@ export default function Login() {
     try {
       await login(email, password);
       navigate('/');
-    } catch {
-      setError('ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।');
+    } catch (err) {
+      setError(err instanceof Error && err.message === 'NOT_OWNER'
+        ? 'এই অ্যাকাউন্টে প্রবেশের অনুমতি নেই।'
+        : 'ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।');
     } finally {
       setLoading(false);
     }
