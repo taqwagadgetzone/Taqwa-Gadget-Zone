@@ -1,0 +1,16 @@
+{
+  "name": "Taqwa Gadget Zone — স্টক ও হিসাব",
+  "short_name": "Taqwa Stock",
+  "description": "সেলস, কুরিয়ার, স্টক ও হিসাবের অ্যাপ",
+  "lang": "bn",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FDEBD9",
+  "theme_color": "#0E3B2C",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
