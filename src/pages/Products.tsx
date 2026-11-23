@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { logActivity } from '../services/activity';
 import type { Product } from '../types';
 import { stockStatus } from '../services/stock';
 import {
@@ -149,6 +150,7 @@ export default function Products() {
           openingStock: stock,
         });
       }
+      void logActivity('product', editing ? 'প্রোডাক্ট এডিট' : 'প্রোডাক্ট যোগ', form.name.trim());
       setOpen(false);
     } catch (err) {
       alert('সেভ করতে সমস্যা: ' + String(err));
@@ -161,6 +163,7 @@ export default function Products() {
     setDeleting(p.id);
     try {
       await deleteDoc(doc(db, 'products', p.id));
+      void logActivity('product', 'প্রোডাক্ট মুছা', p.name);
     } catch (err) {
       alert('মুছতে সমস্যা: ' + String(err));
     }

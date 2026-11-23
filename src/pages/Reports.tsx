@@ -8,6 +8,7 @@ import {
 import {
   BDT, USD, cn, inputCls, Card, PageHeader, StatCard, Badge, Chip, Button, Spinner, Empty,
 } from '../components/ui';
+import { ActivityCard, BackupCard, CustomerInsights } from '../components/ReportExtras';
 const todayStr = () => new Date().toISOString().split('T')[0];
 const monthNow = () => todayStr().slice(0, 7);
 const monthLabel = (m: string) => new Date(m + '-01').toLocaleString('bn-BD', { month: 'long', year: 'numeric' });
@@ -325,6 +326,10 @@ export default function Reports() {
           </table>
         </div>
       </Card>
+
+      <BackupCard sales={sales} expenses={expenses} products={products} />
+      <CustomerInsights sales={sales} />
+      <ActivityCard />
     </div>
   );
 }

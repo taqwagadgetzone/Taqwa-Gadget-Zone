@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { logActivity } from '../services/activity';
 import type { Expense, Product } from '../types';
 import {
   BDT, USD, cn, inputCls, labelCls, Card, PageHeader, StatCard, Badge, Chip,
@@ -222,6 +223,7 @@ export default function Expenses() {
     try {
       if (editId) await updateDoc(doc(db, 'expenses', editId), payload as Record<string, unknown>);
       else await addDoc(collection(db, 'expenses'), payload);
+      void logActivity('expense', editId ? 'খরচ এডিট' : 'খরচ যোগ', `${payload.description} · ${payload.amount}`);
       setOpen(false);
     } catch (err) {
       alert('সেভ করতে সমস্যা: ' + String(err));
@@ -234,6 +236,7 @@ export default function Expenses() {
     setDeleting(id);
     try {
       await deleteDoc(doc(db, 'expenses', id));
+      void logActivity('expense', 'খরচ মুছা', id);
     } catch (err) {
       alert('মুছতে সমস্যা: ' + String(err));
     }

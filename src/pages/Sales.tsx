@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { logActivity } from '../services/activity';
 import type { Sale, Product } from '../types';
 import { createParcel, getBalance } from '../services/steadfast';
 import { applyStock, resolveItems, shouldDeduct } from '../services/stock';
@@ -390,10 +391,12 @@ export default function Sales() {
           }
         }
         await updateDoc(doc(db, 'sales', editId), payload);
+        void logActivity('sale', 'সেল এডিট', `${payload.invoice || ''} · ${payload.customerRef || payload.customerPhone || ''}`);
       } else {
         const wantDeduct = shouldDeduct(form.saleType, form.status);
         payload.stockAdjusted = wantDeduct;
         const ref = await addDoc(collection(db, 'sales'), payload);
+        void logActivity('sale', 'সেল যোগ', `${payload.invoice || ''} · ${payload.customerRef || payload.customerPhone || ''}`);
         if (wantDeduct) {
           stockWarnings.push(...await applyStock(resolveItems(items, products), -1));
         }
@@ -462,6 +465,7 @@ export default function Sales() {
         await applyStock(resolveItems(s.items || [], products), 1); // স্টক ফেরত
       }
       await deleteDoc(doc(db, 'sales', id));
+      void logActivity('sale', 'সেল মুছা', s?.invoice || id);
     } catch (err) {
       alert('মুছতে সমস্যা: ' + String(err));
     }
@@ -475,6 +479,7 @@ export default function Sales() {
     try {
       const { patch, warnings } = await stockForStatus(s, status);
       await updateDoc(doc(db, 'sales', id), { courierDeliveryStatus: status, ...patch });
+      void logActivity('sale', 'স্ট্যাটাস বদল', `${s.invoice || ''} → ${status}`);
       setSales(prev => prev.map(x => (x.id === id ? { ...x, courierDeliveryStatus: status, ...patch } : x)));
       if (warnings.length) alert('⚠️ ' + warnings.join('\n'));
     } catch (err) {
