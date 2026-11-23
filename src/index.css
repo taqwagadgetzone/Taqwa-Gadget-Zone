@@ -65,18 +65,16 @@ html { font-size: 17px; }
   background: linear-gradient(90deg, #F26B1D 0 72px, #3CC08A 72px, #9BE7C4 60%, transparent 100%);
 }
 
-/* ইনভয়েস প্রিন্ট — স্ক্রিনে লুকানো; প্রিন্টে শুধু ইনভয়েসটুকু দেখায় */
+/* ইনভয়েস প্রিন্ট — স্ক্রিনে লুকানো। প্রিন্টে অ্যাপের বাকি অংশ (#root) পুরোপুরি বাদ যায়,
+   শুধু পোর্টালে body-র সরাসরি ছেলে হিসেবে থাকা ইনভয়েসটুকু ছাপা হয়। এতে খালি পাতা আসে না। */
 .print-area { display: none; }
 @media print {
   @page { size: A5; margin: 10mm; }
-  html, body { background: #fff !important; }
-  body * { visibility: hidden !important; }
-  .print-area, .print-area * { visibility: visible !important; }
+  html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
+  body > *:not(.print-area) { display: none !important; }
   .print-area {
     display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: static !important;
     width: 100%;
     background: #fff;
     color: #000;

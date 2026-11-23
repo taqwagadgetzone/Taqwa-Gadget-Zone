@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import type { Sale } from '../types';
 import { BDT } from './ui';
 import { SHOP } from './InvoicePrint';
@@ -7,7 +8,7 @@ export function DeliveryPrint({ sales }: { sales: Sale[] | null }) {
   if (!sales || sales.length === 0) return null;
   const cod = sales.reduce((t, s) => t + (s.codAmount || 0), 0);
   const today = new Date().toLocaleDateString('bn-BD', { dateStyle: 'long' });
-  return (
+  return createPortal(
     <div className="print-area delivery-print" aria-hidden="true">
       <div className="flex items-start justify-between gap-4 border-b-4 border-[#3CC08A] pb-2">
         <div>
@@ -59,6 +60,7 @@ export function DeliveryPrint({ sales }: { sales: Sale[] | null }) {
         <span>রাইডারের স্বাক্ষর: ____________________</span>
         <span>মালিকের স্বাক্ষর: ____________________</span>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

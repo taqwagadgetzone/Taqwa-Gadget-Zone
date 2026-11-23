@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import type { Sale } from '../types';
 import { BDT } from './ui';
 
@@ -16,7 +17,7 @@ export function InvoicePrint({ sale }: { sale: Sale | null }) {
   const advance = sale.advanceAmount || 0;
   const total = sale.salesAmount || items.reduce((s, i) => s + (i.totalSelling || 0), 0);
   const due = Math.max(0, total - advance);
-  return (
+  return createPortal(
     <div className="print-area" aria-hidden="true">
       <div className="flex items-start justify-between gap-4 border-b-4 border-[#3CC08A] pb-3">
         <div className="flex items-center gap-3">
@@ -71,6 +72,7 @@ export function InvoicePrint({ sale }: { sale: Sale | null }) {
       </div>
 
       <div className="mt-8 text-center text-xs text-slate-600">আমাদের সাথে কেনাকাটার জন্য ধন্যবাদ।</div>
-    </div>
+    </div>,
+    document.body
   );
 }
