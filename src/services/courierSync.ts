@@ -53,7 +53,13 @@ export async function saveCourierStatus(s: Sale, next: string, products: Product
   return warnings;
 }
 
-export interface SyncResult { checked: number; changed: number; failed: number; warnings: string[] }
+/** যে সেলের স্ট্যাটাস বদলালো — নোটিফিকেশনের জন্য */
+export interface CourierChange { invoice: string; name: string; status: string }
+
+export interface SyncResult { checked: number; changed: number; failed: number; warnings: string[]; changes: CourierChange[] }
+
+/** এই স্ট্যাটাসগুলোতে মালিকের মনোযোগ দরকার (ফেরত, বাতিল, হোল্ড) */
+export const ATTENTION_STATUSES = ['hold', 'cancelled', 'returned_to_courier', 'returned_to_merchant', 'partial_returned_to_merchant'];
 
 /** সব চলমান কুরিয়ার সেলের স্ট্যাটাস Steadfast থেকে আনে (একসাথে ৩টা করে) */
 export async function syncCourierStatuses(): Promise<SyncResult> {
@@ -62,7 +68,7 @@ export async function syncCourierStatuses(): Promise<SyncResult> {
   const sales = sSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Sale[];
   const targets = sales.filter(s => isTrackable(s) && !FINAL_STATUSES.includes(s.courierDeliveryStatus || ''));
 
-  const result: SyncResult = { checked: targets.length, changed: 0, failed: 0, warnings: [] };
+  const result: SyncResult = { checked: targets.length, changed: 0, failed: 0, warnings: [], changes: [] };
   const CONCURRENCY = 3;
   for (let i = 0; i < targets.length; i += CONCURRENCY) {
     await Promise.all(targets.slice(i, i + CONCURRENCY).map(async s => {
@@ -71,6 +77,7 @@ export async function syncCourierStatuses(): Promise<SyncResult> {
         if (next !== s.courierDeliveryStatus) {
           result.warnings.push(...await saveCourierStatus(s, next, products));
           result.changed++;
+          result.changes.push({ invoice: s.invoice || s.orderNumber || '', name: s.customerRef || '', status: next });
         }
       } catch {
         result.failed++;

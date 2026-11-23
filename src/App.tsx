@@ -11,6 +11,7 @@ const Products = lazy(() => import('./pages/Products'));
 const Sales = lazy(() => import('./pages/Sales'));
 const Expenses = lazy(() => import('./pages/Expenses'));
 const Reports = lazy(() => import('./pages/Reports'));
+const Ledger = lazy(() => import('./pages/Ledger'));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
@@ -38,6 +39,7 @@ function AppRoutes() {
         <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
         <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
         <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+        <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

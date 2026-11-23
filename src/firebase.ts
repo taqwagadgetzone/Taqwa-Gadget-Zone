@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,5 +13,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, 'ai-studio-taqwagadgetzone-63d8bb83-bde9-4918-8a57-e8b2741a455b');
+// ডেটা ডিভাইসে ক্যাশ থাকে, তাই নেট না থাকলেও আগের হিসাব দেখা যায় (সেভ/স্ট্যাটাস বদল নেট লাগে)
+export const db = initializeFirestore(
+  app,
+  { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) },
+  'ai-studio-taqwagadgetzone-63d8bb83-bde9-4918-8a57-e8b2741a455b'
+);
 export default app;

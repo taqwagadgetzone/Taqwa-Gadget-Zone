@@ -3,6 +3,9 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'fireb
 import { db } from '../firebase';
 import { logActivity } from '../services/activity';
 import { InvoicePrint } from '../components/InvoicePrint';
+import { DeliveryPrint } from '../components/DeliveryPrint';
+import { ensureOnline } from '../hooks/useOnline';
+import { useSearchParams } from 'react-router-dom';
 import type { Sale, Product } from '../types';
 import { createParcel, getBalance } from '../services/steadfast';
 import { applyStock, resolveItems, shouldDeduct } from '../services/stock';
@@ -37,6 +40,9 @@ const ADVANCE_CHIPS = [100, 115, 150, 200, 500];
 const PAYMENT_METHODS = ['bKash', 'Nagad', 'Rocket', 'Cash', 'Bank'];
 const COD_CONDITION_RATE = 0.01; // COD-এর ১% কন্ডিশন চার্জ
 const RIDER_NOTE_DEFAULT = 'নির্দেশনা: কাস্টমার চেক করতে চাইলে সামনে রেখে আনবক্সিং ভিডিও করুন। প্রয়োজনে মার্চেন্টে কল দিন।';
+
+// এই স্ট্যাটাসগুলোতে সেল আর ডেলিভারি তালিকায় যায় না
+const CLOSED_STATUSES = ['delivered', 'cancelled', 'returned_to_courier', 'returned_to_merchant', 'partial_returned_to_merchant'];
 
 // ---------- helpers ----------
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -133,7 +139,8 @@ export default function Sales() {
   const [monthKey, setMonthKey] = useState(monthNow());
   const [channelFilter, setChannelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get('q') || '');
 
   // modal
   const [open, setOpen] = useState(false);
@@ -151,6 +158,23 @@ export default function Sales() {
       window.removeEventListener('afterprint', done);
     };
   }, [printSale]);
+  // দিনের ডেলিভারি তালিকা — ডায়ালগ + প্রিন্ট (প্রিন্ট শেষে স্ক্রিন থেকে সরে যায়)
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [deliveryScope, setDeliveryScope] = useState<'today' | 'open'>('open');
+  const [deliveryPrint, setDeliveryPrint] = useState<Sale[] | null>(null);
+  useEffect(() => {
+    if (!deliveryPrint) return;
+    const done = () => setDeliveryPrint(null);
+    window.addEventListener('afterprint', done);
+    const t = window.setTimeout(() => window.print(), 80);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('afterprint', done);
+    };
+  }, [deliveryPrint]);
+  // বাল্ক অ্যাকশনের জন্য একাধিক সেল নির্বাচন
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [form, setForm] = useState<SaleForm>(emptyForm(''));
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -335,6 +359,7 @@ export default function Sales() {
   const c = calc(form);
 
   const save = async () => {
+    if (!ensureOnline()) return;
     if (c.productTotal <= 0) return alert('প্রোডাক্টের বিক্রয়মূল্য দিন');
     if (!form.lines.some(l => l.model.trim())) return alert('অন্তত একটি প্রোডাক্টের মডেল দিন');
     if (form.phone && !isPhone(form.phone) && !confirm('ফোন নম্বরটি ১১ ডিজিটের মনে হচ্ছে না। তবুও সেভ করবেন?')) return;
@@ -470,6 +495,7 @@ export default function Sales() {
   };
 
   const remove = async (id: string) => {
+    if (!ensureOnline()) return;
     if (!confirm('এই সেলস এন্ট্রি মুছে ফেলবেন? এটি ফিরিয়ে আনা যাবে না।')) return;
     setBusyId(id);
     try {
@@ -488,6 +514,7 @@ export default function Sales() {
   const updateStatus = async (id: string, status: string) => {
     const s = sales.find(x => x.id === id);
     if (!s) return;
+    if (!ensureOnline()) return;
     setBusyId(id);
     try {
       const { patch, warnings } = await stockForStatus(s, status);
@@ -529,6 +556,75 @@ export default function Sales() {
     setSyncingAll(false);
   };
 
+  // ড্যাশবোর্ড/গ্লোবাল খোঁজ থেকে ?q= — URL বদলালে ফিল্টার বসে (রেন্ডারের সময়ই হিসাব, effect ছাড়া)
+  const urlQ = searchParams.get('q');
+  const [seenQ, setSeenQ] = useState(urlQ);
+  if (urlQ !== seenQ) {
+    setSeenQ(urlQ);
+    if (urlQ !== null) setSearch(urlQ);
+  }
+
+  // কিবোর্ড N (বা ?new=1) — নতুন সেলের ফর্ম খোলে
+  const openAddRef = useRef(openAdd);
+  useEffect(() => { openAddRef.current = openAdd; });
+  useEffect(() => {
+    const onNew = () => openAddRef.current();
+    window.addEventListener('tgz:new-sale', onNew);
+    return () => window.removeEventListener('tgz:new-sale', onNew);
+  }, []);
+  useEffect(() => {
+    if (loading || searchParams.get('new') === null) return;
+    openAddRef.current();
+    setSearchParams(prev => {
+      const n = new URLSearchParams(prev);
+      n.delete('new');
+      return n;
+    }, { replace: true });
+  }, [loading, searchParams, setSearchParams]);
+
+  const toggleOne = (id: string) => setSelected(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const allVisible = filtered.length > 0 && filtered.every(s => selected.has(s.id));
+  const toggleAll = () => setSelected(allVisible ? new Set() : new Set(filtered.map(s => s.id)));
+
+  // নির্বাচিত কুরিয়ার সেলের স্ট্যাটাস একসাথে — স্টকও ঠিক থাকে
+  const bulkStatus = async (status: string) => {
+    if (!ensureOnline()) return;
+    const targets = sales.filter(s => selected.has(s.id) && s.saleType === 'Courier Sale');
+    if (targets.length === 0) return alert('নির্বাচিত সেলে কোনো কুরিয়ার সেল নেই');
+    if (!confirm(`${targets.length}টি সেলের স্ট্যাটাস "${STATUS_CONFIG[status]?.label || status}" করবেন?`)) return;
+    setBulkBusy(true);
+    const warnings: string[] = [];
+    let failed = 0;
+    for (const s of targets) {
+      try {
+        const { patch, warnings: w } = await stockForStatus(s, status);
+        await updateDoc(doc(db, 'sales', s.id), { courierDeliveryStatus: status, ...patch });
+        warnings.push(...w);
+      } catch {
+        failed++;
+      }
+    }
+    void logActivity('sale', 'বাল্ক স্ট্যাটাস', `${targets.length - failed}টি → ${STATUS_CONFIG[status]?.label || status}`);
+    setBulkBusy(false);
+    setSelected(new Set());
+    if (failed) alert(`${failed}টি সেলে সমস্যা হয়েছে, বাকিগুলো আপডেট হয়েছে`);
+    if (warnings.length) alert('⚠️ ' + warnings.join('\n'));
+  };
+
+  // ডেলিভারি তালিকার সারি — নির্বাচন থাকলে সেগুলো, নইলে খোলা (বা আজকের) কুরিয়ার সেল
+  const deliveryRows = useMemo(() => {
+    if (selected.size > 0) return sales.filter(s => selected.has(s.id) && s.saleType === 'Courier Sale');
+    return sales.filter(s =>
+      s.saleType === 'Courier Sale' &&
+      !CLOSED_STATUSES.includes(s.courierDeliveryStatus || '') &&
+      (deliveryScope === 'open' || s.date === todayStr())
+    );
+  }, [sales, selected, deliveryScope]);
+
   if (loading) return <SkeletonList rows={4} />;
 
   const periodLabel = period === 'today' ? 'আজ' : period === 'month' ? monthKey : 'সব সময়';
@@ -536,6 +632,7 @@ export default function Sales() {
   return (
     <div className="pb-24 sm:pb-8">
       <InvoicePrint sale={printSale} />
+      <DeliveryPrint sales={deliveryPrint} />
       <PageHeader
         theme="forest"
         title="সেলস ও কুরিয়ার"
@@ -546,6 +643,7 @@ export default function Sales() {
               <span className="text-emerald-200">Steadfast ব্যালেন্স </span>
               <span className="font-bold tabular-nums">{balance === null ? '—' : BDT(balance)}</span>
             </div>
+            <Button variant="ghost" onClick={() => setDeliveryOpen(true)} className="w-full sm:w-auto">🚚 ডেলিভারি তালিকা</Button>
             <Button variant="ghost" onClick={syncAll} disabled={syncingAll} className="w-full sm:w-auto">
               {syncingAll ? 'সিঙ্ক হচ্ছে…' : '🔄 কুরিয়ার সিঙ্ক'}
             </Button>
@@ -597,11 +695,21 @@ export default function Sales() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[#F3E2D0] bg-white px-4 py-2 text-xs text-slate-600">
+            <label className="flex cursor-pointer items-center gap-2 font-medium">
+              <input type="checkbox" checked={allVisible} onChange={toggleAll} className="h-4 w-4 accent-[#14513B]" />
+              সব নির্বাচন ({filtered.length})
+            </label>
+            {selected.size > 0 && (
+              <button type="button" onClick={() => setSelected(new Set())} className="font-semibold text-rose-600 hover:underline">নির্বাচন মুছুন</button>
+            )}
+          </div>
           {/* Desktop table */}
           <div className="hidden overflow-x-auto xl:block">
             <table className="w-full text-sm">
               <thead className="bg-[#0E3B2C] text-left text-xs font-semibold text-[#FDEBD9]">
                 <tr>
+                  <th className="w-10 px-3 py-3"><span className="sr-only">নির্বাচন</span></th>
                   <th className="px-4 py-3">ইনভয়েস / তারিখ</th>
                   <th className="px-4 py-3">কাস্টমার</th>
                   <th className="px-4 py-3">প্রোডাক্ট</th>
@@ -614,7 +722,7 @@ export default function Sales() {
               </thead>
               <tbody className="divide-y divide-[#F3E2D0]">
                 {filtered.map(s => <SaleRowDesktop key={s.id} s={s} busy={busyId === s.id}
-                  onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} />)}
+                  onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} checked={selected.has(s.id)} onToggle={toggleOne} />)}
               </tbody>
             </table>
           </div>
@@ -622,7 +730,7 @@ export default function Sales() {
           {/* Tablet & mobile cards */}
           <ul className="divide-y divide-[#F3E2D0] xl:hidden">
             {filtered.map(s => <SaleCard key={s.id} s={s} busy={busyId === s.id}
-              onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} />)}
+              onEdit={openEdit} onDelete={remove} onStatus={updateStatus} onSync={syncStatus} onPrint={setPrintSale} checked={selected.has(s.id)} onToggle={toggleOne} />)}
           </ul>
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#F3E2D0] bg-[#FFF4EA] px-4 py-3 text-sm">
@@ -633,8 +741,50 @@ export default function Sales() {
       )}
 
       <button type="button" onClick={openAdd}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden"
+        className={cn('fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#F26B1D] text-2xl text-white shadow-xl transition active:scale-95 md:hidden', selected.size > 0 && 'hidden')}
         aria-label="নতুন সেল">＋</button>
+
+      {/* বাল্ক অ্যাকশন বার */}
+      {selected.size > 0 && (
+        <div className="fixed inset-x-3 bottom-20 z-40 mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 rounded-2xl border-b-4 border-[#F26B1D] bg-[#0E3B2C] px-4 py-3 text-white shadow-2xl md:bottom-6">
+          <span className="text-sm font-bold">✔ {selected.size}টি নির্বাচিত</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <select disabled={bulkBusy} value="" onChange={e => { const v = e.target.value; if (v) void bulkStatus(v); }}
+              className="rounded-lg border-0 px-2.5 py-2 text-xs font-semibold text-slate-800 disabled:opacity-60">
+              <option value="">{bulkBusy ? 'বদলানো হচ্ছে…' : 'স্ট্যাটাস বদলান…'}</option>
+              {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+            <Button variant="accent" onClick={() => setDeliveryOpen(true)} className="!py-2 text-xs">🚚 তালিকা প্রিন্ট</Button>
+            <Button variant="soft" onClick={() => setSelected(new Set())} className="!py-2 text-xs">✕ বাতিল</Button>
+          </div>
+        </div>
+      )}
+
+      {/* ডেলিভারি তালিকার ডায়ালগ */}
+      <Modal open={deliveryOpen} title="ডেলিভারি তালিকা" onClose={() => setDeliveryOpen(false)}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="soft" onClick={() => setDeliveryOpen(false)}>বন্ধ</Button>
+            <Button variant="accent" disabled={deliveryRows.length === 0}
+              onClick={() => { setDeliveryOpen(false); setDeliveryPrint(deliveryRows); }}>
+              🖨️ প্রিন্ট ({deliveryRows.length})
+            </Button>
+          </div>
+        }>
+        <div className="space-y-3 text-sm">
+          {selected.size > 0 ? (
+            <div className="rounded-xl bg-[#FFF4EA] px-3 py-2 text-[#14513B]">শুধু নির্বাচিত {selected.size}টি সেলের তালিকা হবে।</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Chip active={deliveryScope === 'open'} onClick={() => setDeliveryScope('open')}>সব খোলা সেল</Chip>
+              <Chip active={deliveryScope === 'today'} onClick={() => setDeliveryScope('today')}>শুধু আজকের সেল</Chip>
+            </div>
+          )}
+          <p className="text-xs text-slate-500">
+            ডেলিভারি হয়ে গেছে, বাতিল বা ফেরত সেল বাদ যাবে। মোট {deliveryRows.length}টি সেল, COD {BDT(deliveryRows.reduce((t, x) => t + (x.codAmount || 0), 0))}।
+          </p>
+        </div>
+      </Modal>
 
       {/* ===== Add / Edit ===== */}
       <Modal
@@ -1017,6 +1167,8 @@ function itemsText(s: Sale) {
 interface RowProps {
   s: Sale;
   busy: boolean;
+  checked: boolean;
+  onToggle: (id: string) => void;
   onEdit: (s: Sale) => void;
   onDelete: (id: string) => void;
   onStatus: (id: string, v: string) => void;
@@ -1091,9 +1243,19 @@ function whatsappUrl(s: Sale): string | null {
   return `https://wa.me/880${d.slice(1)}?text=${encodeURIComponent(body)}`;
 }
 
+// ডেলিভারি হওয়ার পর ধন্যবাদ বার্তা — একই ফোন নম্বরের নিয়ম
+function thankYouUrl(s: Sale): string | null {
+  const d = digitsOnly(s.customerPhone || '');
+  if (!isPhone(d)) return null;
+  const greet = s.customerRef?.trim() ? `আসসালামু আলাইকুম ${s.customerRef.trim()},` : 'আসসালামু আলাইকুম,';
+  const body = `${greet}\nTaqwa Gadget Zone থেকে বলছি। আপনার অর্ডারটি সফলভাবে পৌঁছেছে বলে জেনে আনন্দিত। আমাদের থেকে কেনাকাটার জন্য ধন্যবাদ। আবার সেবা দেওয়ার সুযোগ চাই।`;
+  return `https://wa.me/880${d.slice(1)}?text=${encodeURIComponent(body)}`;
+}
+
 function Actions({ s, busy, onEdit, onDelete, onSync, onPrint }: RowProps) {
   const canSync = isTrackable(s);
   const wa = whatsappUrl(s);
+  const thanks = s.courierDeliveryStatus === 'delivered' ? thankYouUrl(s) : null;
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5">
       <IconButton tone="blue" title="এডিট" onClick={() => onEdit(s)}>✏️</IconButton>
@@ -1101,6 +1263,9 @@ function Actions({ s, busy, onEdit, onDelete, onSync, onPrint }: RowProps) {
       {s.courierTrackingLink && <CopyLinkButton link={s.courierTrackingLink} />}
       {wa && (
         <IconButton tone="wa" title="WhatsApp-এ মেসেজ" onClick={() => window.open(wa, '_blank', 'noopener,noreferrer')}>💬</IconButton>
+      )}
+      {thanks && (
+        <IconButton tone="wa" title="ধন্যবাদ বার্তা (ডেলিভারির পর)" onClick={() => window.open(thanks, '_blank', 'noopener,noreferrer')}>🙏</IconButton>
       )}
       {canSync && (
         <IconButton tone="amber" title="Steadfast স্ট্যাটাস আনুন" disabled={busy} onClick={() => onSync(s)}>{busy ? '…' : '🔄'}</IconButton>
@@ -1116,6 +1281,9 @@ function SaleRowDesktop(p: RowProps) {
   const tint = customerTint(s);
   return (
     <tr className="align-top" style={{ background: tint.bg }}>
+      <td className="px-3 py-3">
+        <input type="checkbox" aria-label="নির্বাচন" checked={p.checked} onChange={() => p.onToggle(s.id)} className="h-4 w-4 accent-[#14513B]" />
+      </td>
       <td className="px-4 py-3" style={{ borderLeft: `6px solid ${tint.bar}` }}>
         <div className="font-mono text-xs font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</div>
         <div className="text-[11px] tabular-nums text-slate-400">{s.date}</div>
@@ -1164,7 +1332,8 @@ function SaleCard(p: RowProps) {
   return (
     <li className="px-4 py-3.5" style={{ background: tint.bg, borderLeft: `6px solid ${tint.bar}` }}>
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <input type="checkbox" aria-label="নির্বাচন" checked={p.checked} onChange={() => p.onToggle(s.id)} className="mt-1 h-4 w-4 shrink-0 accent-[#14513B]" />
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-mono text-[11px] font-semibold text-emerald-900">{s.invoice || s.id.slice(0, 8).toUpperCase()}</span>
             <span className="text-[11px] tabular-nums text-slate-400">{s.date}</span>

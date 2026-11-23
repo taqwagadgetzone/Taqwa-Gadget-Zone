@@ -100,3 +100,27 @@ export async function applyStock(lines: LineRef[], sign: 1 | -1): Promise<string
   }
   return warnings;
 }
+
+/**
+ * ক্রয় বা ফেরত-নষ্ট সমন্বয়ে স্টক বাড়ানো (qty > 0) / কমানো (qty < 0)।
+ * বিক্রির totalSold ও colorSold ছোঁয় না — তাই বিক্রির হিসাব বদলায় না।
+ */
+export async function adjustStock(productId: string | undefined, color: string, qty: number): Promise<void> {
+  if (!productId || !qty) return;
+  await runTransaction(db, async tx => {
+    const ref = doc(db, 'products', productId);
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return;
+    const p = snap.data() as Product;
+    const colorStock: Record<string, number> = { ...(p.colorStock || {}) };
+    const c = (color || '').trim();
+    if (c) colorStock[c] = Math.max(0, (colorStock[c] || 0) + qty);
+    const currentStock = Math.max(0, (p.currentStock || 0) + qty);
+    tx.update(ref, {
+      currentStock,
+      colorStock,
+      stockValue: (p.defaultSellingPrice || 0) * currentStock,
+      status: stockStatus(currentStock),
+    });
+  });
+}

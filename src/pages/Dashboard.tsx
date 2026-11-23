@@ -9,6 +9,7 @@ import {
   BDT, cn, Card, PageHeader, StatCard, Badge, Chip, Spinner, Empty,
 } from '../components/ui';
 import type { Sale } from '../types';
+import { BackupReminder, CourierAlerts, GoalCard } from '../components/DashboardExtras';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 const monthNow = () => todayStr().slice(0, 7);
@@ -78,6 +79,10 @@ export default function Dashboard() {
         }
       />
 
+      <BackupReminder sales={sales} expenses={expenses} products={products} />
+
+      <CourierAlerts sales={sales} />
+
       {/* Alerts */}
       {(stock.out.length > 0 || stock.low.length > 0) && (
         <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -118,6 +123,8 @@ export default function Dashboard() {
         <StatCard label="COD আদায়" value={BDT(sm.codCollected)} sub="ডেলিভারি হয়েছে" tone="green" icon="✅" />
         <StatCard label="স্টক ভ্যালু" value={BDT(stock.value)} sub={`${stock.pieces.toLocaleString('en-IN')} পিস · ${products.length}টি প্রোডাক্ট`} tone="slate" icon="📦" />
       </div>
+
+      <GoalCard sales={sales} expenses={expenses} month={thisMonth} />
 
       {/* Channel performance */}
       <div className="mb-5">

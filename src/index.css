@@ -18,3 +18,9 @@
     font-family: 'Hind Siliguri', system-ui, sans-serif;
   }
 }
+
+/* দিনের ডেলিভারি তালিকা — A4 landscape (নামযুক্ত পেজ; পুরোনো ব্রাউজারে A5 চলে) */
+@media print {
+  .delivery-print { page: delivery; }
+  @page delivery { size: A4 landscape; margin: 8mm; }
+}

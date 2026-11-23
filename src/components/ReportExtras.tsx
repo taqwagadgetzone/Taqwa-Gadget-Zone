@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { downloadCSV } from '../services/accounting';
+import { useMemo, useState } from 'react';
+import { exportExpensesCSV, exportProductsCSV, exportSalesCSV, downloadAllBackups, lastBackupAt } from '../services/backup';
 import { useActivity } from '../hooks/useActivity';
 import type { ActivityKind } from '../services/activity';
 import type { Expense, Product, Sale } from '../types';
@@ -104,33 +104,94 @@ export function ActivityCard() {
   );
 }
 
-// ডেটা ব্যাকআপ — তিনটি CSV (Excel-এ খুলবে)
+// ডেটা ব্যাকআপ — তিনটি CSV (Excel-এ খুলবে); "সব একসাথে" নিলে শেষ ব্যাকআপের তারিখ থাকে
 export function BackupCard({ sales, expenses, products }: { sales: Sale[]; expenses: Expense[]; products: Product[] }) {
-  const stamp = new Date().toISOString().slice(0, 10);
-  const exportSales = () => downloadCSV(`সেলস-ব্যাকআপ-${stamp}.csv`, [
-    ['তারিখ', 'ইনভয়েস', 'কাস্টমার', 'ফোন', 'চ্যানেল', 'ধরন', 'মোট বিক্রি', 'নিট লাভ', 'স্ট্যাটাস', 'কুরিয়ার ইনভয়েস'],
-    ...sales.map(s => [
-      s.date, s.invoice || '', s.customerRef || '', s.customerPhone || '', s.customerChannel || '',
-      s.saleType, s.salesAmount || 0, s.netProfit || 0, s.courierDeliveryStatus || '', s.courierInvoice || '',
-    ]),
-  ]);
-  const exportExpenses = () => downloadCSV(`খরচ-ব্যাকআপ-${stamp}.csv`, [
-    ['তারিখ', 'ক্যাটাগরি', 'বিবরণ', 'পরিমাণ'],
-    ...expenses.map(e => [e.date, e.category, e.description, e.amount]),
-  ]);
-  const exportProducts = () => downloadCSV(`প্রোডাক্ট-ব্যাকআপ-${stamp}.csv`, [
-    ['নাম', 'মডেল', 'ক্যাটাগরি', 'বর্তমান স্টক', 'মোট বিক্রি', 'ক্রয়মূল্য', 'বিক্রয়মূল্য'],
-    ...products.map(p => [p.name, p.model, p.category, p.currentStock, p.totalSold, p.defaultPurchasePrice, p.defaultSellingPrice]),
-  ]);
+  const [last, setLast] = useState(lastBackupAt());
+  const all = () => {
+    downloadAllBackups(sales, expenses, products);
+    setLast(lastBackupAt());
+  };
   return (
     <Card className="p-4">
       <h2 className="text-sm font-bold text-slate-800">ডেটা ব্যাকআপ</h2>
-      <p className="mb-3 text-[11px] text-slate-500">মাসের শেষে বা দরকারে তিনটি ফাইল নামিয়ে রাখুন।</p>
-      <div className="grid gap-2 sm:grid-cols-3">
-        <Button variant="soft" onClick={exportSales}>📄 সেলস CSV</Button>
-        <Button variant="soft" onClick={exportExpenses}>💸 খরচ CSV</Button>
-        <Button variant="soft" onClick={exportProducts}>📦 প্রোডাক্ট CSV</Button>
+      <p className="mb-3 text-[11px] text-slate-500">
+        শেষ ব্যাকআপ: {last ? new Date(last).toLocaleDateString('bn-BD', { dateStyle: 'medium' }) : 'এখনো নেওয়া হয়নি'}। প্রতি ৩০ দিনে একবার নিন।
+      </p>
+      <div className="grid gap-2 sm:grid-cols-4">
+        <Button variant="primary" onClick={all}>⬇️ সব একসাথে</Button>
+        <Button variant="soft" onClick={() => exportSalesCSV(sales)}>📄 সেলস CSV</Button>
+        <Button variant="soft" onClick={() => exportExpensesCSV(expenses)}>💸 খরচ CSV</Button>
+        <Button variant="soft" onClick={() => exportProductsCSV(products)}>📦 প্রোডাক্ট CSV</Button>
       </div>
+    </Card>
+  );
+}
+
+// একই ফোনে ভিন্ন নাম, বা একই নামে ভিন্ন ফোন — সম্ভাব্য ডুপ্লিকেট কাস্টমার
+export function DuplicateCard({ sales }: { sales: Sale[] }) {
+  const { byPhone, byName } = useMemo(() => {
+    const phoneNames = new Map<string, Map<string, number>>();
+    const namePhones = new Map<string, Map<string, number>>();
+    for (const s of sales) {
+      const phone = digits(s.customerPhone || '');
+      const name = (s.customerRef || '').trim();
+      if (phone && name) {
+        const names = phoneNames.get(phone) ?? new Map<string, number>();
+        names.set(name, (names.get(name) || 0) + 1);
+        phoneNames.set(phone, names);
+        const key = name.toLowerCase();
+        const phones = namePhones.get(key) ?? new Map<string, number>();
+        phones.set(phone, (phones.get(phone) || 0) + 1);
+        namePhones.set(key, phones);
+      }
+    }
+    const pick = (m: Map<string, Map<string, number>>) => [...m.entries()]
+      .filter(([, v]) => v.size > 1)
+      .map(([k, v]) => ({ key: k, values: [...v.entries()].sort((a, b) => b[1] - a[1]).map(([x, n]) => `${x} (${n})`) }))
+      .sort((a, b) => b.values.length - a.values.length)
+      .slice(0, 12);
+    return { byPhone: pick(phoneNames), byName: pick(namePhones) };
+  }, [sales]);
+
+  const none = byPhone.length === 0 && byName.length === 0;
+  return (
+    <Card className="overflow-hidden">
+      <div className="border-b border-slate-100 px-4 py-3">
+        <h2 className="text-sm font-bold text-slate-800">সম্ভাব্য ডুপ্লিকেট কাস্টমার</h2>
+        <p className="text-[11px] text-slate-500">একই ফোনে ভিন্ন নাম, বা একই নামে ভিন্ন ফোন। এডিট করে ঠিক করে নিন।</p>
+      </div>
+      {none ? (
+        <Empty icon="✅" text="কোনো সন্দেহজনক ডুপ্লিকেট পাওয়া যায়নি" />
+      ) : (
+        <div className="grid gap-4 p-4 md:grid-cols-2">
+          <div>
+            <div className="mb-2 text-xs font-semibold text-slate-600">একই ফোন, ভিন্ন নাম</div>
+            {byPhone.length === 0 ? <div className="text-xs text-slate-400">নেই</div> : (
+              <ul className="space-y-2">
+                {byPhone.map(r => (
+                  <li key={r.key} className="rounded-xl bg-[#FFF4EA] px-3 py-2 text-xs">
+                    <div className="font-mono font-semibold text-[#0E3B2C]">📞 {r.key}</div>
+                    <div className="text-slate-600">{r.values.join(' · ')}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <div className="mb-2 text-xs font-semibold text-slate-600">একই নাম, ভিন্ন ফোন</div>
+            {byName.length === 0 ? <div className="text-xs text-slate-400">নেই</div> : (
+              <ul className="space-y-2">
+                {byName.map(r => (
+                  <li key={r.key} className="rounded-xl bg-[#FFF4EA] px-3 py-2 text-xs">
+                    <div className="font-semibold text-[#0E3B2C]">👤 {r.key}</div>
+                    <div className="font-mono text-slate-600">{r.values.join(' · ')}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
